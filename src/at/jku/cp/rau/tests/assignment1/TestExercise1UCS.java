@@ -28,61 +28,48 @@ import at.jku.cp.rau.utils.PathUtils;
 import at.jku.cp.rau.utils.TestUtils;
 
 @RunWith(Parameterized.class)
-public class TestExercise1UCS
-{
-	@Parameters
-	public static Collection<Object[]> generateParams()
-	{
-		List<Object[]> params = new ArrayList<Object[]>();
+public class TestExercise1UCS {
+    @Parameters
+    public static Collection<Object[]> generateParams() {
+        List<Object[]> params = new ArrayList<Object[]>();
 
-		for (int i = 0; i < Config.N_TESTS; i++)
-		{
-			params.add(new Object[] {
-					String.format("assets/assignment1/L%d/level", i),
-					String.format("assets/assignment1/L%d/costs", i),
-					String.format("assets/assignment1/L%d/ucs.path", i)
-			});
-		}
+        for (int i = 0; i < Config.N_TESTS; i++) {
+            params.add(new Object[] { String.format("assets/assignment1/L%d/level", i),
+                    String.format("assets/assignment1/L%d/costs", i),
+                    String.format("assets/assignment1/L%d/ucs.path", i) });
+        }
 
-		return params;
-	}
+        return params;
+    }
 
-	private String levelName;
-	private String pathName;
-	private Function<PNode> costs;
+    private String levelName;
+    private String pathName;
+    private Function<PNode> costs;
 
-	public TestExercise1UCS(String levelName, String costName, String pathName)
-			throws IOException
-	{
-		this.levelName = levelName;
-		this.pathName = pathName;
+    public TestExercise1UCS(String levelName, String costName, String pathName) throws IOException {
+        this.levelName = levelName;
+        this.pathName = pathName;
 
-		List<String> _costs = Files.readAllLines(
-				Paths.get(costName),
-				StandardCharsets.UTF_8);
+        List<String> _costs = Files.readAllLines(Paths.get(costName), StandardCharsets.UTF_8);
 
-		this.costs = new ExplicitCost<PNode>(_costs);
-	}
+        this.costs = new ExplicitCost<PNode>(_costs);
+    }
 
-	@Test
-	public void pathToLocationWithUCSOnLevel()
-	{
-		pathToLocationWithSearchOnLevel(new UCS<PNode>(costs));
-	}
+    @Test
+    public void pathToLocationWithUCSOnLevel() {
+        pathToLocationWithSearchOnLevel(new UCS<PNode>(costs));
+    }
 
-	private void pathToLocationWithSearchOnLevel(Search<PNode> searcher)
-	{
-		IBoard board = Board.fromLevelFile(levelName);
-		Unicorn player = board.getCurrentUnicorn();
+    private void pathToLocationWithSearchOnLevel(Search<PNode> searcher) {
+        IBoard board = Board.fromLevelFile(levelName);
+        Unicorn player = board.getCurrentUnicorn();
 
-		V start = player.pos;
-		final Marker end = board.getMarkers().get(0);
-		List<PNode> expectedPath = PathUtils.vToPNodes(PathUtils.fromFile(pathName), board);
+        V start = player.pos;
+        final Marker end = board.getMarkers().get(0);
+        List<PNode> expectedPath = PathUtils.vToPNodes(PathUtils.fromFile(pathName), board);
 
-		List<PNode> actualPath = searcher.search(
-				new PNode(board, start),
-				new PositionReached(end.pos));
+        List<PNode> actualPath = searcher.search(new PNode(board, start), new PositionReached(end.pos));
 
-		TestUtils.assertListEquals(expectedPath, actualPath);
-	}
+        TestUtils.assertListEquals(expectedPath, actualPath);
+    }
 }

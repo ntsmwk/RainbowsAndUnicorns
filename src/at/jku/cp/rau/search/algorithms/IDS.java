@@ -8,20 +8,17 @@ import at.jku.cp.rau.search.Node;
 import at.jku.cp.rau.search.predicates.Predicate;
 
 // Iterative Deepening Search
-public class IDS<T extends Node<T>> implements Search<T>
-{
-	private int limit;
+public class IDS<T extends Node<T>> implements Search<T> {
+    private int limit;
 
-	public IDS(int limit)
-	{
-		this.limit = limit;
-	}
+    public IDS(int limit) {
+        this.limit = limit;
+    }
 
-	@Override
-	public List<T> search(T start, Predicate<T> endPredicate)
-	{
-		//TODO: Implement Iterative Deepening Search
-		return Collections.emptyList();
-	}
+    @Override
+    public List<T> search(T start, Predicate<T> endPredicate) {
+        // TODO: Implement Iterative Deepening Search
+        return Collections.emptyList();
+    }
 
 }

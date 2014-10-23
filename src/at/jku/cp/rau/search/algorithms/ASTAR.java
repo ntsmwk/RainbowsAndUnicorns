@@ -8,21 +8,18 @@ import at.jku.cp.rau.search.Node;
 import at.jku.cp.rau.search.predicates.Predicate;
 
 // A* Search
-public class ASTAR<T extends Node<T>> implements Search<T>
-{
-	private Function<T> cost;
-	private Function<T> heuristic;
-	
-	public ASTAR(Function<T> costs, Function<T> heuristic)
-	{
-		this.cost = costs;
-		this.heuristic = heuristic;
-	}
-	
-	@Override
-	public List<T> search(T start, Predicate<T> endPredicate)
-	{
-		//TODO: implement A* search 
-		return Collections.emptyList();
-	}
+public class ASTAR<T extends Node<T>> implements Search<T> {
+    private Function<T> cost;
+    private Function<T> heuristic;
+
+    public ASTAR(Function<T> costs, Function<T> heuristic) {
+        this.cost = costs;
+        this.heuristic = heuristic;
+    }
+
+    @Override
+    public List<T> search(T start, Predicate<T> endPredicate) {
+        // TODO: implement A* search
+        return Collections.emptyList();
+    }
 }

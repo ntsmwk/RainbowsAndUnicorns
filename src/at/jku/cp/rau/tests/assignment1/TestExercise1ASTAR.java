@@ -30,72 +30,55 @@ import at.jku.cp.rau.utils.PathUtils;
 import at.jku.cp.rau.utils.TestUtils;
 
 @RunWith(Parameterized.class)
-public class TestExercise1ASTAR
-{
-	@Parameters
-	public static Collection<Object[]> generateParams()
-	{
-		List<Object[]> params = new ArrayList<Object[]>();
+public class TestExercise1ASTAR {
+    @Parameters
+    public static Collection<Object[]> generateParams() {
+        List<Object[]> params = new ArrayList<Object[]>();
 
-		for (int i = 0; i < Config.N_TESTS; i++)
-		{
-			params.add(new Object[] {
-					String.format("assets/assignment1/L%d/level", i),
-					String.format("assets/assignment1/L%d/costs", i),
-					String.format("assets/assignment1/L%d/astar_mh.path", i)
-			});
-			
-			params.add(new Object[] {
-					String.format("assets/assignment1/L%d/level", i),
-					String.format("assets/assignment1/L%d/costs", i),
-					String.format("assets/assignment1/L%d/astar_ec.path", i)
-			});
-		}
+        for (int i = 0; i < Config.N_TESTS; i++) {
+            params.add(new Object[] { String.format("assets/assignment1/L%d/level", i),
+                    String.format("assets/assignment1/L%d/costs", i),
+                    String.format("assets/assignment1/L%d/astar_mh.path", i) });
 
-		return params;
-	}
+            params.add(new Object[] { String.format("assets/assignment1/L%d/level", i),
+                    String.format("assets/assignment1/L%d/costs", i),
+                    String.format("assets/assignment1/L%d/astar_ec.path", i) });
+        }
 
-	private List<PNode> expectedPath;
-	private Function<PNode> heuristic;
-	private Function<PNode> costs;
-	private IBoard board;
-	
-	public TestExercise1ASTAR(String levelName, String costName, String pathName)
-			throws IOException
-	{
-		board = Board.fromLevelFile(levelName);
-		expectedPath = PathUtils.vToPNodes(PathUtils.fromFile(pathName), board);
-		
-		List<String> _costs = Files.readAllLines(
-				Paths.get(costName),
-				StandardCharsets.UTF_8);
+        return params;
+    }
 
-		this.costs = new ExplicitCost<PNode>(_costs);
-		
-		if(pathName.contains("_mh"))
-		{
-			this.heuristic = new ManhattanDistance<PNode>(expectedPath.get(expectedPath.size() - 1).getPos());
-		} else if(pathName.contains("_ec"))
-		{
-			this.heuristic = new EuclideanDistance<PNode>(expectedPath.get(expectedPath.size() - 1).getPos());
-		}
-	}
+    private List<PNode> expectedPath;
+    private Function<PNode> heuristic;
+    private Function<PNode> costs;
+    private IBoard board;
 
-	@Test
-	public void pathToLocationWithASTAROnLevel()
-	{
-		Search<PNode> searcher = new ASTAR<PNode>(costs, heuristic);
-		
-		Unicorn player = board.getCurrentUnicorn();
+    public TestExercise1ASTAR(String levelName, String costName, String pathName) throws IOException {
+        board = Board.fromLevelFile(levelName);
+        expectedPath = PathUtils.vToPNodes(PathUtils.fromFile(pathName), board);
 
-		V start = player.pos;
-		final Marker end = board.getMarkers().get(0);
-		
+        List<String> _costs = Files.readAllLines(Paths.get(costName), StandardCharsets.UTF_8);
 
-		List<PNode> actualPath = searcher.search(
-				new PNode(board, start),
-				new PositionReached(end.pos));
+        this.costs = new ExplicitCost<PNode>(_costs);
 
-		TestUtils.assertListEquals(expectedPath, actualPath);
-	}
+        if (pathName.contains("_mh")) {
+            this.heuristic = new ManhattanDistance<PNode>(expectedPath.get(expectedPath.size() - 1).getPos());
+        } else if (pathName.contains("_ec")) {
+            this.heuristic = new EuclideanDistance<PNode>(expectedPath.get(expectedPath.size() - 1).getPos());
+        }
+    }
+
+    @Test
+    public void pathToLocationWithASTAROnLevel() {
+        Search<PNode> searcher = new ASTAR<PNode>(costs, heuristic);
+
+        Unicorn player = board.getCurrentUnicorn();
+
+        V start = player.pos;
+        final Marker end = board.getMarkers().get(0);
+
+        List<PNode> actualPath = searcher.search(new PNode(board, start), new PositionReached(end.pos));
+
+        TestUtils.assertListEquals(expectedPath, actualPath);
+    }
 }

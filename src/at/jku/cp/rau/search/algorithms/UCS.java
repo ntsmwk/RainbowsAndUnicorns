@@ -8,19 +8,16 @@ import at.jku.cp.rau.search.Node;
 import at.jku.cp.rau.search.predicates.Predicate;
 
 // Uniform Cost Search
-public class UCS<T extends Node<T>> implements Search<T>
-{
-	private Function<T> cost;
+public class UCS<T extends Node<T>> implements Search<T> {
+    private Function<T> cost;
 
-	public UCS(Function<T> costs)
-	{
-		this.cost = costs;
-	}
+    public UCS(Function<T> costs) {
+        this.cost = costs;
+    }
 
-	@Override
-	public List<T> search(T start, Predicate<T> endPredicate)
-	{
-		//TODO: Implement Unified Costs Search
-		return Collections.emptyList();
-	}
+    @Override
+    public List<T> search(T start, Predicate<T> endPredicate) {
+        // TODO: Implement Unified Costs Search
+        return Collections.emptyList();
+    }
 }

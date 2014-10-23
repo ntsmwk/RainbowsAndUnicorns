@@ -21,49 +21,40 @@ import at.jku.cp.rau.utils.PathUtils;
 import at.jku.cp.rau.utils.TestUtils;
 
 @RunWith(Parameterized.class)
-public class TestExercise1DFS
-{
-	@Parameters
-	public static Collection<Object[]> generateParams()
-	{
-		List<Object[]> params = new ArrayList<Object[]>();
+public class TestExercise1DFS {
+    @Parameters
+    public static Collection<Object[]> generateParams() {
+        List<Object[]> params = new ArrayList<Object[]>();
 
-		for (int i = 0; i < Config.N_TESTS; i++)
-		{
-			params.add(new Object[] {
-					String.format("assets/assignment1/L%d/level", i),
-					String.format("assets/assignment1/L%d/dfs.path", i)
-			});
-		}
+        for (int i = 0; i < Config.N_TESTS; i++) {
+            params.add(new Object[] { String.format("assets/assignment1/L%d/level", i),
+                    String.format("assets/assignment1/L%d/dfs.path", i) });
+        }
 
-		return params;
-	}
+        return params;
+    }
 
-	private String levelName;
-	private String pathName;
+    private String levelName;
+    private String pathName;
 
-	public TestExercise1DFS(String levelName, String pathName)
-	{
-		this.levelName = levelName;
-		this.pathName = pathName;
-	}
+    public TestExercise1DFS(String levelName, String pathName) {
+        this.levelName = levelName;
+        this.pathName = pathName;
+    }
 
-	@Test
-	public void pathToLocationWithDFSOnLevel()
-	{
-		Search<PNode> searcher = new DLDFS<PNode>(-1);
+    @Test
+    public void pathToLocationWithDFSOnLevel() {
+        Search<PNode> searcher = new DLDFS<PNode>(-1);
 
-		IBoard board = Board.fromLevelFile(levelName);
-		V start = board.getCurrentUnicorn().pos;
-		final Marker end = board.getMarkers().get(0);
-		
-		List<PNode> expectedPath = PathUtils.vToPNodes(PathUtils.fromFile(pathName), board);
+        IBoard board = Board.fromLevelFile(levelName);
+        V start = board.getCurrentUnicorn().pos;
+        final Marker end = board.getMarkers().get(0);
 
-		List<PNode> actualPath = searcher.search(
-				new PNode(board, start),
-				new PositionReached(end.pos));
+        List<PNode> expectedPath = PathUtils.vToPNodes(PathUtils.fromFile(pathName), board);
 
-		TestUtils.assertListEquals(expectedPath, actualPath);
-	}
+        List<PNode> actualPath = searcher.search(new PNode(board, start), new PositionReached(end.pos));
+
+        TestUtils.assertListEquals(expectedPath, actualPath);
+    }
 
 }

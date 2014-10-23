@@ -26,97 +26,75 @@ import at.jku.cp.rau.utils.PathUtils;
 import at.jku.cp.rau.utils.TestUtils;
 
 @RunWith(Parameterized.class)
-public class TestExercise1BFSandIDS
-{
-	@Parameters
-	public static Collection<Object[]> generateParams()
-	{
-		List<Object[]> params = new ArrayList<Object[]>();
+public class TestExercise1BFSandIDS {
+    @Parameters
+    public static Collection<Object[]> generateParams() {
+        List<Object[]> params = new ArrayList<Object[]>();
 
-		for (int i = 0; i < Config.N_TESTS; i++)
-		{
-			params.add(new Object[] {
-					String.format("assets/assignment1/L%d/level", i),
-					String.format("assets/assignment1/L%d/bfs.path", i)
-			});
-		}
+        for (int i = 0; i < Config.N_TESTS; i++) {
+            params.add(new Object[] { String.format("assets/assignment1/L%d/level", i),
+                    String.format("assets/assignment1/L%d/bfs.path", i) });
+        }
 
-		return params;
-	}
+        return params;
+    }
 
-	private String levelName;
-	private String pathName;
+    private String levelName;
+    private String pathName;
 
-	public TestExercise1BFSandIDS(String levelName, String pathName)
-	{
-		this.levelName = levelName;
-		this.pathName = pathName;
-	}
+    public TestExercise1BFSandIDS(String levelName, String pathName) {
+        this.levelName = levelName;
+        this.pathName = pathName;
+    }
 
-	@Test
-	public void pathToLocationWithBFSOnLevel()
-	{
-		pathToLocationWithShortestWaySearchOnLevel(new BFS<PNode>());
-	}
+    @Test
+    public void pathToLocationWithBFSOnLevel() {
+        pathToLocationWithShortestWaySearchOnLevel(new BFS<PNode>());
+    }
 
-	@Test
-	public void pathToLocationWithBFSOnBoardStates()
-	{
-		pathToLocationWithShortestWaySearchOnBoardStates(new BFS<BNode>());
-	}
+    @Test
+    public void pathToLocationWithBFSOnBoardStates() {
+        pathToLocationWithShortestWaySearchOnBoardStates(new BFS<BNode>());
+    }
 
-	@Test
-	public void pathToLocationWithIDSOnLevel()
-	{
-		pathToLocationWithShortestWaySearchOnLevel(new IDS<PNode>(1000));
-	}
+    @Test
+    public void pathToLocationWithIDSOnLevel() {
+        pathToLocationWithShortestWaySearchOnLevel(new IDS<PNode>(1000));
+    }
 
-	private void pathToLocationWithShortestWaySearchOnLevel(Search<PNode> searcher)
-	{
-		IBoard board = Board.fromLevelFile(levelName);
-		Unicorn player = board.getCurrentUnicorn();
+    private void pathToLocationWithShortestWaySearchOnLevel(Search<PNode> searcher) {
+        IBoard board = Board.fromLevelFile(levelName);
+        Unicorn player = board.getCurrentUnicorn();
 
-		V start = player.pos;
-		final Marker end = board.getMarkers().get(0);
+        V start = player.pos;
+        final Marker end = board.getMarkers().get(0);
 
-		List<PNode> expectedPath = PathUtils.vToPNodes(PathUtils.fromFile(pathName), board);
+        List<PNode> expectedPath = PathUtils.vToPNodes(PathUtils.fromFile(pathName), board);
 
-		List<PNode> actualPath = searcher.search(
-				new PNode(board, start),
-				new PositionReached(end.pos));
+        List<PNode> actualPath = searcher.search(new PNode(board, start), new PositionReached(end.pos));
 
-		TestUtils.assertListEquals(expectedPath, actualPath);
-	}
+        TestUtils.assertListEquals(expectedPath, actualPath);
+    }
 
-	private void pathToLocationWithShortestWaySearchOnBoardStates(
-			Search<BNode> searcher)
-	{
-		Board board = Board.fromLevelFile(levelName);
+    private void pathToLocationWithShortestWaySearchOnBoardStates(Search<BNode> searcher) {
+        Board board = Board.fromLevelFile(levelName);
 
-		IBoard start = board.copy();
-		final Marker end = board.getMarkers().get(0);
+        IBoard start = board.copy();
+        final Marker end = board.getMarkers().get(0);
 
-		Predicate<BNode> endReached = new Predicate<BNode>()
-		{
-			@Override
-			public boolean isTrueFor(BNode current)
-			{
-				return current.board.isRunning()
-						&& current.board.getCurrentUnicorn().pos
-								.equals(end.pos);
-			}
-		};
+        Predicate<BNode> endReached = new Predicate<BNode>() {
+            @Override
+            public boolean isTrueFor(BNode current) {
+                return current.board.isRunning() && current.board.getCurrentUnicorn().pos.equals(end.pos);
+            }
+        };
 
-		List<V> expectedPath = PathUtils.fromFile(pathName);
-		List<Move> expectedMoveSequence = PathUtils
-				.vToMoves(expectedPath);
-		List<BNode> expectedBoardStates = PathUtils
-				.moveToBNodes(expectedMoveSequence, board);
+        List<V> expectedPath = PathUtils.fromFile(pathName);
+        List<Move> expectedMoveSequence = PathUtils.vToMoves(expectedPath);
+        List<BNode> expectedBoardStates = PathUtils.moveToBNodes(expectedMoveSequence, board);
 
-		List<BNode> actualBoardStates = searcher.search(
-				new BNode(start),
-				endReached);
+        List<BNode> actualBoardStates = searcher.search(new BNode(start), endReached);
 
-		TestUtils.assertListEquals(expectedBoardStates, actualBoardStates);
-	}
+        TestUtils.assertListEquals(expectedBoardStates, actualBoardStates);
+    }
 }

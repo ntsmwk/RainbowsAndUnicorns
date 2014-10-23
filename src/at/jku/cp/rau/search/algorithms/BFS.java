@@ -7,12 +7,10 @@ import at.jku.cp.rau.search.Node;
 import at.jku.cp.rau.search.predicates.Predicate;
 
 // Breadth-First search
-public class BFS<T extends Node<T>> implements Search<T>
-{
-	@Override
-	public List<T> search(T start, Predicate<T> endPredicate)
-	{
-		//TODO: Implement Breadth-First Search
-		return Collections.emptyList();
-	}
+public class BFS<T extends Node<T>> implements Search<T> {
+    @Override
+    public List<T> search(T start, Predicate<T> endPredicate) {
+        // TODO: Implement Breadth-First Search
+        return Collections.emptyList();
+    }
 }

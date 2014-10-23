@@ -26,61 +26,47 @@ import at.jku.cp.rau.utils.PathUtils;
 import at.jku.cp.rau.utils.TestUtils;
 
 @RunWith(Parameterized.class)
-public class TestExercise1GBFS
-{
-	@Parameters
-	public static Collection<Object[]> generateParams()
-	{
-		List<Object[]> params = new ArrayList<Object[]>();
+public class TestExercise1GBFS {
+    @Parameters
+    public static Collection<Object[]> generateParams() {
+        List<Object[]> params = new ArrayList<Object[]>();
 
-		for (int i = 0; i < Config.N_TESTS; i++)
-		{
-			params.add(new Object[] {
-					String.format("assets/assignment1/L%d/level", i),
-					String.format("assets/assignment1/L%d/gbfs_mh.path", i)
-			});
-			
-			params.add(new Object[] {
-					String.format("assets/assignment1/L%d/level", i),
-					String.format("assets/assignment1/L%d/gbfs_ec.path", i)
-			});
-		}
+        for (int i = 0; i < Config.N_TESTS; i++) {
+            params.add(new Object[] { String.format("assets/assignment1/L%d/level", i),
+                    String.format("assets/assignment1/L%d/gbfs_mh.path", i) });
 
-		return params;
-	}
+            params.add(new Object[] { String.format("assets/assignment1/L%d/level", i),
+                    String.format("assets/assignment1/L%d/gbfs_ec.path", i) });
+        }
 
-	private IBoard board;
-	private List<PNode> expectedPath;
-	private Function<PNode> heuristic;
+        return params;
+    }
 
-	public TestExercise1GBFS(String levelName, String pathName)
-			throws IOException
-	{
-		board = Board.fromLevelFile(levelName);
-		expectedPath = PathUtils.vToPNodes(PathUtils.fromFile(pathName), board);
-		
-		if(pathName.contains("_mh"))
-		{
-			this.heuristic = new ManhattanDistance<PNode>(expectedPath.get(expectedPath.size() - 1).getPos());
-		} else if(pathName.contains("_ec"))
-		{
-			this.heuristic = new EuclideanDistance<PNode>(expectedPath.get(expectedPath.size() - 1).getPos());
-		}
-	}
+    private IBoard board;
+    private List<PNode> expectedPath;
+    private Function<PNode> heuristic;
 
-	@Test
-	public void pathToLocationWithUCSOnLevel()
-	{
-		Search<PNode> searcher = new GBFS<PNode>(heuristic);
-		Unicorn player = board.getCurrentUnicorn();
+    public TestExercise1GBFS(String levelName, String pathName) throws IOException {
+        board = Board.fromLevelFile(levelName);
+        expectedPath = PathUtils.vToPNodes(PathUtils.fromFile(pathName), board);
 
-		V start = player.pos;
-		final Marker end = board.getMarkers().get(0);
+        if (pathName.contains("_mh")) {
+            this.heuristic = new ManhattanDistance<PNode>(expectedPath.get(expectedPath.size() - 1).getPos());
+        } else if (pathName.contains("_ec")) {
+            this.heuristic = new EuclideanDistance<PNode>(expectedPath.get(expectedPath.size() - 1).getPos());
+        }
+    }
 
-		List<PNode> actualPath = searcher.search(
-				new PNode(board, start),
-				new PositionReached(end.pos));
+    @Test
+    public void pathToLocationWithUCSOnLevel() {
+        Search<PNode> searcher = new GBFS<PNode>(heuristic);
+        Unicorn player = board.getCurrentUnicorn();
 
-		TestUtils.assertListEquals(expectedPath, actualPath);
-	}
+        V start = player.pos;
+        final Marker end = board.getMarkers().get(0);
+
+        List<PNode> actualPath = searcher.search(new PNode(board, start), new PositionReached(end.pos));
+
+        TestUtils.assertListEquals(expectedPath, actualPath);
+    }
 }
