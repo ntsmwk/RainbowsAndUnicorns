@@ -1,20 +1,20 @@
 package at.jku.cp.rau.search.algorithms;
 
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import at.jku.cp.rau.search.Search;
 import at.jku.cp.rau.search.Node;
+import at.jku.cp.rau.search.Search;
 import at.jku.cp.rau.search.SearchUtils;
 import at.jku.cp.rau.search.predicates.Predicate;
 
 // Iterative Deepening Search
 public class IDS<T extends Node<T>> implements Search<T> {
-    private T start;
     private int limit;
-    private Map<T, T> route;
+    private List<T> list = new ArrayList<>();;
+    private Map<T, T> routes = new HashMap<T, T>();
 
     public IDS(int limit) {
         this.limit = limit;
@@ -22,25 +22,25 @@ public class IDS<T extends Node<T>> implements Search<T> {
 
     @Override
     public List<T> search(T start, Predicate<T> endPredicate) {
-        this.start = start;
-        this.route = new HashMap<T, T>();
-        return searchForCurrent(start, endPredicate, 0);
+        T current = searchNode(start, endPredicate, 0);
+        return SearchUtils.buildBackPath(current, start, routes);
     }
 
-    private List<T> searchForCurrent(T current, Predicate<T> endPredicate, int currentIndex) {
-        if (endPredicate.isTrueFor(current)) {
-            return SearchUtils.buildBackPath(current, start, route);
+    private T searchNode(T node, Predicate<T> endPredicate, int index) {
+        if (limit <= index) {
+            return null;
         }
-
-        if (currentIndex < limit) {
-            for (T node : current.adjacent()) {
-//                route.put(current, node);
-                List<T> results = searchForCurrent(node, endPredicate, currentIndex + 1);
-                if (!results.isEmpty()) {
-                    return results;
-                }
+        if (endPredicate.isTrueFor(node)) {
+            return node;
+        }
+        list.add(node);
+        for (T child : node.adjacent()) {
+            T result = searchNode(child, endPredicate, index + 1);
+            if (result != null) {
+                routes.put(child, node);
+                return result;
             }
         }
-        return Collections.emptyList();
+        return null;
     }
 }
