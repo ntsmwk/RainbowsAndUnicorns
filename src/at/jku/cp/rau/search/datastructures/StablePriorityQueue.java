@@ -159,4 +159,9 @@ public class StablePriorityQueue<Key extends Comparable<Key>, Value> implements 
     public Pair<Key, Value> peek() {
         return pq.peek().element;
     }
+
+    @Override
+    public String toString() {
+        return pq.toString();
+    }
 }

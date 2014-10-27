@@ -29,16 +29,17 @@ public class ASTAR<T extends Node<T>> implements Search<T> {
     public List<T> search(T start, Predicate<T> endPredicate) {
         Set<T> closedset = new HashSet<>();
         Set<T> openset = new HashSet<>(Arrays.asList(start));
+
         Map<T, T> routes = new HashMap<>();
 
-        // g_score[start] := 0 // Cost from start along best known path.
-        // Estimated total cost from start to goal through y.
-        // f_score[start] := g_score[start] + heuristic_cost_estimate(start,
-        // goal)
+        Map<T, Double> costMap = new HashMap<>();
+        Map<T, Double> fMap = new HashMap<>();
+        costMap.put(start, 0.0);
+        fMap.put(start, costMap.get(start) + heuristic.value(start));
 
         while (!openset.isEmpty()) {
-
-            T current = Collections.min(openset, new CostComparator());
+            T current = Collections.min(openset, new CostComparator(fMap));
+            System.out.println(current);
             if (endPredicate.isTrueFor(current)) {
                 return SearchUtils.buildBackPath(current, start, routes);
             }
@@ -48,16 +49,15 @@ public class ASTAR<T extends Node<T>> implements Search<T> {
                 if (closedset.contains(neighbor)) {
                     continue;
                 }
-                // tentative_g_score := g_score[current] +
-                // dist_between(current,neighbor)
-
-                if (!openset.contains(neighbor)) { // or tentative_g_score <
-                                                   // g_score[neighbor]
+                double costOfNeighbor = costMap.get(current) + cost.value(neighbor);
+                if (!openset.contains(neighbor) || costOfNeighbor < costMap.get(neighbor)) {
                     routes.put(neighbor, current);
-                    // g_score[neighbor] := tentative_g_score
-                    // f_score[neighbor] := g_score[neighbor] +
-                    // heuristic_cost_estimate(neighbor, goal)
-                    openset.add(neighbor);
+                    costMap.put(neighbor, costOfNeighbor);
+                    fMap.put(neighbor, costOfNeighbor + heuristic.value(neighbor));
+
+                    if (!openset.contains(neighbor)) {
+                        openset.add(neighbor);
+                    }
                 }
             }
         }
@@ -65,10 +65,17 @@ public class ASTAR<T extends Node<T>> implements Search<T> {
     }
 
     private final class CostComparator implements Comparator<T> {
+        private Map<T, Double> fMap;
+
+        public CostComparator(Map<T, Double> fMap) {
+            this.fMap = Collections.unmodifiableMap(fMap);
+        }
+
         @Override
         public int compare(T o1, T o2) {
-            double value = cost.value(o1) + heuristic.value(o1) - cost.value(o2) - heuristic.value(o2);
-            return value == 0 ? 0 : value < 0 ? -1 : 1;
+            double costO1 = fMap.get(o1);
+            double costO2 = fMap.get(o2);
+            return costO1 == costO2 ? 0 : costO1 < costO2 ? -1 : 1;
         }
     }
 
