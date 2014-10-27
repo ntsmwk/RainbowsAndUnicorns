@@ -16,38 +16,45 @@ import at.jku.cp.rau.search.predicates.Predicate;
 public class BFS<T extends Node<T>> implements Search<T> {
 	private T start;
 	private Map<T, T> route;
-	private List<T> closedList = new ArrayList<>();
-	// private List<T> searchList = new ArrayList<>();
-	private LinkedList<T> nextNodes = new LinkedList<>();
-
+	private List<T> closedList;
+	private LinkedList<T> nextNodes;
+	
+	public BFS() {
+		this.closedList = new ArrayList<>();
+		this.nextNodes = new LinkedList<>();
+		this.route = new HashMap<T, T>();
+	}
+	
 	@Override
 	public List<T> search(T start, Predicate<T> endPredicate) {
 		this.start = start;
-		this.route = new HashMap<T, T>();
 		nextNodes.add(start);
 		return breadthFirstSearch(endPredicate);
 	}
 
 	private List<T> breadthFirstSearch(Predicate<T> endPredicate) {
 		while (!nextNodes.isEmpty()) {
-			T current = nextNodes.removeFirst();
+			T current = getNextUnvisitedNode();
 			
-			while (isVisited(current)) {
-				if (nextNodes.isEmpty()) {
-					return Collections.emptyList();
-				}
-				current = nextNodes.removeFirst();
-			}
 			closedList.add(current);
-			System.out.println(current.toString() + current.adjacent().toString());
-			addAdjacentRoutes(current);
+ 			addAdjacentRoutes(current);
 			if (endPredicate.isTrueFor(current)) {
 				return SearchUtils.buildBackPath(current, start, route);
 			}
 			concatLists(nextNodes, current.adjacent());
-
 		}
 		return Collections.emptyList();
+	}
+	
+	private T getNextUnvisitedNode(){
+		T current = nextNodes.removeFirst();
+		while (isVisited(current)) {
+			if(nextNodes.isEmpty()){
+				return null;
+			}
+			current = nextNodes.removeFirst();
+		}
+		return current;
 	}
 
 	private boolean isVisited(T element) {
@@ -56,15 +63,15 @@ public class BFS<T extends Node<T>> implements Search<T> {
 
 	private void concatLists(List<T> first, List<T> second) {
 		for (T element : second) {
-			if(!isVisited(element)){
+			//if(!isVisited(element)){
 				first.add(element);
-			}
+			//}
 		}
 	}
 	
 	private void addAdjacentRoutes(T current){
 		for(T element : current.adjacent()){
-			if(!isVisited(element)){
+			if(!isVisited(element) && !route.containsKey(element)){	
 				addRoute(element, current);
 			}
 		}
