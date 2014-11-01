@@ -1,6 +1,5 @@
 package at.jku.cp.rau.search.algorithms;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -20,6 +19,13 @@ public class ASTAR<T extends Node<T>> implements Search<T> {
     private Function<T> cost;
     private Function<T> heuristic;
 
+    private Set<T> closedset = new HashSet<>();
+    private Set<T> openset = new HashSet<>();
+
+    private HashMap<T, T> routes = new HashMap<T, T>();
+    private Map<T, Double> costMap = new HashMap<>();
+    private Map<T, Double> functionMap = new HashMap<>();
+
     public ASTAR(Function<T> costs, Function<T> heuristic) {
         this.cost = costs;
         this.heuristic = heuristic;
@@ -27,18 +33,12 @@ public class ASTAR<T extends Node<T>> implements Search<T> {
 
     @Override
     public List<T> search(T start, Predicate<T> endPredicate) {
-        Set<T> closedset = new HashSet<>();
-        Set<T> openset = new HashSet<>(Arrays.asList(start));
-
-        Map<T, T> routes = new HashMap<>();
-
-        Map<T, Double> costMap = new HashMap<>();
-        Map<T, Double> fMap = new HashMap<>();
-        costMap.put(start, 0.0);
-        fMap.put(start, costMap.get(start) + heuristic.value(start));
+        changeMaps(start, 0);
+        addToOpenset(start, 0);
 
         while (!openset.isEmpty()) {
-            T current = Collections.min(openset, new CostComparator(fMap));
+            System.out.println(openset.toString());
+            T current = getMinElement();
             System.out.println(current);
             if (endPredicate.isTrueFor(current)) {
                 return SearchUtils.buildBackPath(current, start, routes);
@@ -51,12 +51,10 @@ public class ASTAR<T extends Node<T>> implements Search<T> {
                 }
                 double costOfNeighbor = costMap.get(current) + cost.value(neighbor);
                 if (!openset.contains(neighbor) || costOfNeighbor < costMap.get(neighbor)) {
-                    routes.put(neighbor, current);
-                    costMap.put(neighbor, costOfNeighbor);
-                    fMap.put(neighbor, costOfNeighbor + heuristic.value(neighbor));
-
+                    addRoute(current, neighbor);
+                    changeMaps(neighbor, costOfNeighbor);
                     if (!openset.contains(neighbor)) {
-                        openset.add(neighbor);
+                        addToOpenset(neighbor, costOfNeighbor);
                     }
                 }
             }
@@ -64,18 +62,27 @@ public class ASTAR<T extends Node<T>> implements Search<T> {
         return Collections.emptyList();
     }
 
+    private void addRoute(T current, T neighbor) {
+        routes.put(neighbor, current);
+    }
+
+    private T getMinElement() {
+        return Collections.min(openset, new CostComparator());
+    }
+
+    private void addToOpenset(T node, double cost) {
+        openset.add(node);
+    }
+
+    private void changeMaps(T node, double cost) {
+        costMap.put(node, cost);
+        functionMap.put(node, cost + heuristic.value(node));
+    }
+
     private final class CostComparator implements Comparator<T> {
-        private Map<T, Double> fMap;
-
-        public CostComparator(Map<T, Double> fMap) {
-            this.fMap = Collections.unmodifiableMap(fMap);
-        }
-
         @Override
         public int compare(T o1, T o2) {
-            double costO1 = fMap.get(o1);
-            double costO2 = fMap.get(o2);
-            return costO1 == costO2 ? 0 : costO1 < costO2 ? -1 : 1;
+            return functionMap.get(o1).compareTo(functionMap.get(o2));
         }
     }
 

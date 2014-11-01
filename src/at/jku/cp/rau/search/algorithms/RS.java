@@ -30,8 +30,9 @@ public class RS<T extends Node<T>> implements Search<T> {
             // we add the current node to the path
             path.add(current);
 
-            if (endPredicate.isTrueFor(current))
+            if (endPredicate.isTrueFor(current)) {
                 break;
+            }
 
             // we 'expand' the node - we get its directly adjacent neighbors
             // for that, we call the 'adjacent()' method on the current node
@@ -41,8 +42,9 @@ public class RS<T extends Node<T>> implements Search<T> {
             List<T> adjacent = current.adjacent();
 
             // we reached a terminal node, leave the loop
-            if (adjacent.size() == 0)
+            if (adjacent.size() == 0) {
                 break;
+            }
 
             // if we actually have neighbors, we'll choose a random one
             // to expand next

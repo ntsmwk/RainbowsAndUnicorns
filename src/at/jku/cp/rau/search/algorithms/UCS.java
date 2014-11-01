@@ -22,6 +22,7 @@ public class UCS<T extends Node<T>> implements Search<T> {
     private T start;
     private Pair<Double, T> pair;
     private List<T> list;
+
     public UCS(Function<T> costs) {
         this.cost = costs;
         this.route = new HashMap<T, T>();
@@ -31,31 +32,32 @@ public class UCS<T extends Node<T>> implements Search<T> {
 
     @Override
     public List<T> search(T start, Predicate<T> endPredicate) {
-        this.start=start;
+        this.start = start;
         pair = new Pair<Double, T>(cost.value(start), start);
 
         return uniformCostSearch(endPredicate);
     }
 
-	private List<T> uniformCostSearch( Predicate<T> endPredicate) {
-		limit.add(pair);
-		while(!limit.isEmpty()){
-			Pair<Double, T> pair2 = limit.poll();
-			if (endPredicate.isTrueFor(pair2.s)) {
-				return SearchUtils.buildBackPath(pair2.s, start, route);
-			}
-			list.add(pair2.s);
-			for (T element: pair2.s.adjacent()) {
-				if (! list.contains(element) && !limit.contains(element)) {
-					limit.add(new Pair<Double, T>(pair2.f+cost.value(element), element));
-					list.add(element);
-					addRoute(element, pair2.s);
-				}
-			}
-		}
-		return Collections.EMPTY_LIST;
-	}
-	private void addRoute(T current, T next) {
-		route.put(current, next);
-	}
+    private List<T> uniformCostSearch(Predicate<T> endPredicate) {
+        limit.add(pair);
+        while (!limit.isEmpty()) {
+            Pair<Double, T> pair2 = limit.poll();
+            if (endPredicate.isTrueFor(pair2.s)) {
+                return SearchUtils.buildBackPath(pair2.s, start, route);
+            }
+            list.add(pair2.s);
+            for (T element : pair2.s.adjacent()) {
+                if (!list.contains(element) && !limit.contains(element)) {
+                    limit.add(new Pair<Double, T>(pair2.f + cost.value(element), element));
+                    list.add(element);
+                    addRoute(element, pair2.s);
+                }
+            }
+        }
+        return Collections.emptyList();
+    }
+
+    private void addRoute(T current, T next) {
+        route.put(current, next);
+    }
 }
