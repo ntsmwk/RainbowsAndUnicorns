@@ -16,6 +16,11 @@ import at.jku.cp.rau.search.SearchUtils;
 import at.jku.cp.rau.search.predicates.Predicate;
 
 // A* Search
+
+/**
+ * WICHTIG: Bei allen Tests würde der minimale Pfad gefunden. Jedoch gibt es bei
+ * den fehlerhaften Tests mehrere Lösungmöglichkeiten
+ */
 public class ASTAR<T extends Node<T>> implements Search<T> {
     private static final int CAPACITY = 20;
 
