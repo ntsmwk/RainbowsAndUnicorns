@@ -25,7 +25,7 @@ public class ASTAR<T extends Node<T>> implements Search<T> {
     private Set<T> closedset = new HashSet<>();
     private PriorityQueue<T> openset = new PriorityQueue<>(CAPACITY, new CostComparator());
 
-    private HashMap<T, T> routes = new HashMap<>();
+    private Map<T, T> routes = new HashMap<>();
     private Map<T, Double> costMap = new HashMap<>();
     private Map<T, Double> scoreMap = new HashMap<>();
 

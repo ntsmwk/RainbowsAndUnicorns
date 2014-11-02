@@ -20,26 +20,6 @@ import at.jku.cp.rau.utils.Pair;
 public class StablePriorityQueue<Key extends Comparable<Key>, Value> implements Queue<Pair<Key, Value>> {
     private final static AtomicInteger seq = new AtomicInteger(0);
 
-    private class Entry<T1 extends Comparable<T1>, T2> {
-        final int order;
-        final Pair<T1, T2> element;
-
-        public Entry(Pair<T1, T2> element) {
-            this.element = element;
-            this.order = seq.incrementAndGet();
-        }
-    }
-
-    private class OrderedComparator<T1 extends Comparable<T1>, T2> implements Comparator<Entry<T1, T2>> {
-        @Override
-        public int compare(final Entry<T1, T2> a, final Entry<T1, T2> b) {
-            int r = a.element.f.compareTo(b.element.f);
-            if (r == 0)
-                return Integer.compare(a.order, b.order);
-            return r;
-        }
-    }
-
     private PriorityQueue<Entry<Key, Value>> pq;
 
     public StablePriorityQueue() {
@@ -163,5 +143,27 @@ public class StablePriorityQueue<Key extends Comparable<Key>, Value> implements 
     @Override
     public String toString() {
         return pq.toString();
+    }
+
+    private class Entry<T1 extends Comparable<T1>, T2> {
+        final int order;
+        final Pair<T1, T2> element;
+
+        public Entry(Pair<T1, T2> element) {
+            this.element = element;
+            this.order = seq.incrementAndGet();
+        }
+    }
+
+    private class OrderedComparator<T1 extends Comparable<T1>, T2> implements Comparator<Entry<T1, T2>> {
+       
+        @Override
+        public int compare(final Entry<T1, T2> a, final Entry<T1, T2> b) {
+            int r = a.element.f.compareTo(b.element.f);
+            if (r == 0) {
+                return Integer.compare(a.order, b.order);
+            }
+            return r;
+        }
     }
 }
