@@ -98,4 +98,9 @@ public class SafeBNode implements Node<SafeBNode>, ContainsBoard, ContainsMove {
         return board.toString();
     }
 
+    @Override
+    public boolean isLeaf() {
+        return !board.isRunning();
+    }
+
 }

@@ -23,7 +23,8 @@ public class Runtime {
     private static final int IMPROPER_SEED = 4;
     private static final int UNFORESEEN_CONSEQUENCES = 5;
 
-    private static long playTime = 5 * 60 * 1000;
+    private static long timeLimit = 5 * 60 * 1000;
+    private static int moveLimit = 1000;
 
     public static void main(String[] args) {
         if (args.length < 3) {
@@ -60,7 +61,7 @@ public class Runtime {
                 Player player = (Player) Class.forName(classFilename).newInstance();
                 players.add(player);
 
-                PlayerInfo info = new PlayerInfo(playTime, i, new Random(masterRandom.nextLong()));
+                PlayerInfo info = new PlayerInfo(timeLimit, moveLimit, i, new Random(masterRandom.nextLong()));
                 playerInfoMapping.put(player, info);
 
             } catch (InstantiationException | IllegalAccessException | ClassNotFoundException e) {
@@ -76,8 +77,8 @@ public class Runtime {
         }
 
         Board masterBoard = Board.fromLevelFile(levelName);
-        PointCollecting flagCollecting = new PointCollecting();
-        masterBoard.setEndCondition(flagCollecting);
+        PointCollecting pointCollecting = new PointCollecting();
+        masterBoard.setEndCondition(pointCollecting);
 
         final PrintStream stdout = System.out;
         if (!verbose) {
@@ -87,6 +88,11 @@ public class Runtime {
         try {
             while (masterBoard.isRunning()) {
                 System.out.println(masterBoard);
+
+                System.out.println(String.format("%d %d %d %d %d %d", masterBoard.getTick(), masterBoard
+                        .getEndCondition().getWinner(), pointCollecting.getScore(0), pointCollecting.getScore(1),
+                        playerInfoMapping.get(players.get(0)).remainingTime,
+                        playerInfoMapping.get(players.get(1)).remainingTime));
 
                 Player player = players.get(masterBoard.getCurrentUnicorn().id);
                 PlayerInfo info = playerInfoMapping.get(player);
@@ -107,7 +113,7 @@ public class Runtime {
                 Move move = player.getNextMove(copyInfo, copyBoard);
                 long end = System.currentTimeMillis();
                 long timeTaken = end - start;
-
+                System.out.println("time taken : " + timeTaken + " [ms]");
                 // if for some reason the player method returns a 'null',
                 // replace it with the 'do-nothing' move (execute a 'STAY' move)
                 if (move == null) {
@@ -126,7 +132,7 @@ public class Runtime {
             // always print this ...
             System.setOut(stdout);
             System.out.println(String.format("%d %d %d %d %d %d %s %s %s", masterBoard.getTick(), masterBoard
-                    .getEndCondition().getWinner(), flagCollecting.getScore(0), flagCollecting.getScore(1),
+                    .getEndCondition().getWinner(), pointCollecting.getScore(0), pointCollecting.getScore(1),
                     playerInfoMapping.get(players.get(0)).remainingTime,
                     playerInfoMapping.get(players.get(1)).remainingTime, args[0], args[1], args[2]));
 

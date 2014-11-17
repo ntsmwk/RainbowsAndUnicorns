@@ -51,6 +51,11 @@ final public class LastUnicornStanding implements EndCondition, Serializable {
     }
 
     @Override
+    public String getOutcome() {
+        return "KOWIN";
+    }
+
+    @Override
     public int hashCode() {
         final int prime = 31;
         int result = 1;

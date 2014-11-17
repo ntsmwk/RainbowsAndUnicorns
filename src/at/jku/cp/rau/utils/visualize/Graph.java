@@ -14,15 +14,21 @@ public class Graph<T extends Node<T>> {
     private Set<T> vertices;
     private List<Pair<T, T>> edges;
     private Map<Pair<T, T>, Integer> weights;
+    private Map<T, Double> vertexWeights;
 
     public Graph() {
         vertices = new HashSet<>();
         edges = new ArrayList<>();
         weights = new HashMap<>();
+        vertexWeights = new HashMap<>();
     }
 
     public void addVertex(T vertex) {
         vertices.add(vertex);
+    }
+
+    public void addVertexWeight(T vertex, double weight) {
+        vertexWeights.put(vertex, weight);
     }
 
     public void addEdge(Pair<T, T> edge) {
@@ -44,6 +50,10 @@ public class Graph<T extends Node<T>> {
 
     public int getWeight(Pair<T, T> edge) {
         return weights.get(edge);
+    }
+
+    public Double getVertexWeight(T vertex) {
+        return vertexWeights.get(vertex);
     }
 
     public Set<Pair<T, T>> getWeightedEdges() {

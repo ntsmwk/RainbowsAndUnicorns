@@ -1,22 +1,20 @@
 package at.jku.cp.rau.runtime.server;
 
-import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.UnknownHostException;
 
 import at.jku.cp.rau.game.objects.Move;
 import at.jku.cp.rau.runtime.players.Player;
+import at.jku.cp.rau.utils.Pair;
 
 public class PlayerMoveServer {
     private static final int INVALID_ARGUMENTS = 1;
 
-    public static void main(String[] args) throws UnknownHostException, IOException, ClassNotFoundException,
-            InstantiationException, IllegalAccessException {
+    public static void main(String[] args) throws Exception {
         if (args.length != 2) {
             System.exit(INVALID_ARGUMENTS);
         }
@@ -31,13 +29,17 @@ public class PlayerMoveServer {
         ObjectInput in = new ObjectInputStream(socket.getInputStream());
         ObjectOutput out = new ObjectOutputStream(socket.getOutputStream());
 
-        CommWrapper input = (CommWrapper) in.readObject();
-        while (CommWrapper.CW_END != input) {
+        CommWrapper input = null;
+        while (CommWrapper.CW_END != (input = (CommWrapper) in.readObject())) {
+            // let the player determine its next move, measure time
+            // taken
+            long start = System.currentTimeMillis();
             Move move = player.getNextMove(input.info, input.board);
-            out.writeObject(move);
-            out.flush();
+            long end = System.currentTimeMillis();
+            long timeTaken = end - start;
 
-            input = (CommWrapper) in.readObject();
+            out.writeObject(new Pair<Move, Long>(move, timeTaken));
+            out.flush();
         }
 
         socket.close();

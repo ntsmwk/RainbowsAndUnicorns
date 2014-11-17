@@ -504,7 +504,11 @@ public class Board implements IBoard, Serializable {
      */
     @Override
     public boolean isPassable(V pos) {
-        for (GameObject g : at(pos)) {
+        List<GameObject> objs = at(pos);
+        if (objs.isEmpty())
+            return false;
+
+        for (GameObject g : objs) {
             if (g.pos.equals(pos) && !g.isPassable)
                 return false;
         }

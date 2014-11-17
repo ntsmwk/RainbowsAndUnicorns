@@ -157,8 +157,7 @@ public class TestV {
 
         for (Map.Entry<V, Integer> e : counter.entrySet()) {
             if (e.getValue() > 1) {
-                System.out.println("hasherror:" + e);
-                fail();
+                fail("hasherror:" + e);
             }
         }
     }

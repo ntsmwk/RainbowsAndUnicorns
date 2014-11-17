@@ -279,7 +279,7 @@ public class RenderUtils {
     }
 
     private static String name(Object o) {
-        return "n" + Integer.toHexString(o.hashCode());
+        return o == null ? "null" : "n" + Integer.toHexString(o.hashCode());
     }
 
     public static <T extends Node<T> & ContainsBoard & ContainsMove> void visualizeSearchGraph(String prefix,
@@ -293,7 +293,13 @@ public class RenderUtils {
             pathTest.add(new Pair<>(previous, current));
         }
 
-        T goal = path.get(path.size() - 1);
+        T start = null;
+        T goal = null;
+
+        if (path.size() > 0) {
+            start = path.get(0);
+            goal = path.get(path.size() - 1);
+        }
 
         List<String> dot = new ArrayList<>();
         dot.add("digraph G {");
@@ -302,11 +308,17 @@ public class RenderUtils {
         dot.add("root [label=\"root\"];");
 
         for (T bn : graph.getVertices()) {
-            String nodepng = writeBoardAsPNG(prefix, bn.getBoard(), goal.getBoard());
-            dot.add(String.format("%s [image=\"%s\"];", name(bn), nodepng));
+            String nodepng = writeBoardAsPNG(prefix, bn.getBoard(), (goal == null) ? null : goal.getBoard());
+
+            String vertexweight = "";
+            if (null != graph.getVertexWeight(bn)) {
+                vertexweight = String.format(", label=\"%f\"", graph.getVertexWeight(bn));
+            }
+
+            dot.add(String.format("%s [image=\"%s\"%s];", name(bn), nodepng, vertexweight));
         }
 
-        dot.add(String.format("root -> %s [color=\"magenta\"];", name(path.get(0))));
+        dot.add(String.format("root -> %s [color=\"magenta\"];", name(start)));
 
         for (Pair<T, T> e : graph.getWeightedEdges()) {
             String colorcode = Integer.toHexString(e.f.getBoard().getCurrentUnicorn().id == 0 ? hexblue : hexred);

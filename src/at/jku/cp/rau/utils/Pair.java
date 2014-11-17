@@ -1,6 +1,9 @@
 package at.jku.cp.rau.utils;
 
-public class Pair<F, S> {
+import java.io.Serializable;
+
+public class Pair<F, S> implements Serializable {
+    private static final long serialVersionUID = 1L;
     public F f;
     public S s;
 

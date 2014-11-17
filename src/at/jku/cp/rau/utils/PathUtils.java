@@ -13,8 +13,11 @@ import at.jku.cp.rau.game.Board;
 import at.jku.cp.rau.game.IBoard;
 import at.jku.cp.rau.game.objects.Move;
 import at.jku.cp.rau.game.objects.V;
+import at.jku.cp.rau.search.Node;
 import at.jku.cp.rau.search.nodes.BNode;
+import at.jku.cp.rau.search.nodes.ContainsBoard;
 import at.jku.cp.rau.search.nodes.PNode;
+import at.jku.cp.rau.utils.visualize.GraphTelemetry;
 
 public class PathUtils {
     public static void toFile(String filename, List<V> path) {
@@ -109,7 +112,9 @@ public class PathUtils {
             BNode current = new BNode(board.copy());
 
             for (Move move : path) {
-                current.board.executeMove(move);
+                if (!current.board.executeMove(move)) {
+                    throw new RuntimeException("move list is bogus!");
+                }
                 nodes.add(new BNode(move, current.board.copy()));
             }
         }
@@ -129,5 +134,13 @@ public class PathUtils {
         }
 
         return lst;
+    }
+
+    public static <T extends Node<T> & ContainsBoard> List<T> unwrap(List<GraphTelemetry<T>> path) {
+        List<T> ts = new ArrayList<>();
+        for (GraphTelemetry<T> gtnode : path) {
+            ts.add(gtnode.content);
+        }
+        return ts;
     }
 }

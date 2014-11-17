@@ -1,5 +1,6 @@
 package at.jku.cp.rau.game.endconditions;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -13,9 +14,11 @@ import at.jku.cp.rau.game.objects.Marker;
 import at.jku.cp.rau.game.objects.Unicorn;
 import at.jku.cp.rau.utils.Pair;
 
-final public class PointCollecting implements EndCondition {
-    private enum Outcome {
-        KOWIN, KODRAW, SCORE
+final public class PointCollecting implements EndCondition, Serializable {
+    private static final long serialVersionUID = 1L;
+
+    public enum Outcome {
+        TIMEOUT, MEMOUT, KOWIN, KODRAW, SCORE
     };
 
     private int winner;
@@ -34,8 +37,21 @@ final public class PointCollecting implements EndCondition {
         this.scores = new HashMap<>(pointCollecting.scores);
     }
 
+    public void setWinnerOnTimeout(int winner) {
+        this.outcome = Outcome.TIMEOUT;
+        this.winner = winner;
+    }
+
+    public void setWinnerOnMemout(int winner) {
+        this.outcome = Outcome.MEMOUT;
+        this.winner = winner;
+    }
+
     @Override
     public boolean hasEnded(IBoard board, List<Cloud> evaporated, List<Unicorn> sailing) {
+        if (outcome == Outcome.TIMEOUT)
+            return true;
+
         if (board.getUnicorns().size() == 0) {
             outcome = Outcome.KODRAW;
             winner = -1;
@@ -71,6 +87,9 @@ final public class PointCollecting implements EndCondition {
 
     @Override
     public int getWinner() {
+        if (outcome == Outcome.TIMEOUT || outcome == Outcome.MEMOUT)
+            return winner;
+
         if (outcome == Outcome.SCORE) {
             if (scores.size() == 1) {
                 return scores.entrySet().iterator().next().getKey();
@@ -102,6 +121,11 @@ final public class PointCollecting implements EndCondition {
             // Outcome.KOWIN
             return winner;
         }
+    }
+
+    @Override
+    public String getOutcome() {
+        return outcome.toString();
     }
 
     @Override

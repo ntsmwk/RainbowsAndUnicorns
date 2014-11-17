@@ -82,4 +82,9 @@ public class PNode implements Node<PNode>, ContainsPos, ContainsMove {
     public String toString() {
         return pos.toString();
     }
+
+    @Override
+    public boolean isLeaf() {
+        return adjacent().isEmpty();
+    }
 }

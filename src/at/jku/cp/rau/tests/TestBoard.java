@@ -1,10 +1,12 @@
 package at.jku.cp.rau.tests;
 
+import static org.hamcrest.core.IsCollectionContaining.hasItem;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertThat;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -45,8 +47,6 @@ public class TestBoard {
     public static Collection<Object[]> generateParams() {
         List<Object[]> params = new ArrayList<Object[]>();
 
-        params.add(new Object[] { Board.class });
-
         return params;
     }
 
@@ -59,7 +59,7 @@ public class TestBoard {
     private IBoard fromLevelFile(String filename) {
         try {
             Method m = clazz.getMethod("fromLevelFile", String.class);
-            return (IBoard) m.invoke(clazz, "assets/default.lvl");
+            return (IBoard) m.invoke(clazz, Constants.ASSET_PATH + "/default.lvl");
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -77,7 +77,7 @@ public class TestBoard {
     @Test
     public void deepCopyBoard() {
 
-        IBoard a = fromLevelFile("assets/default.lvl");
+        IBoard a = fromLevelFile(Constants.ASSET_PATH + "/default.lvl");
         IBoard b = a.deepCopy();
 
         assertEquals(a, b);
@@ -95,7 +95,7 @@ public class TestBoard {
     @Test
     public void copyIsActuallyDifferent() {
 
-        IBoard a = fromLevelFile("assets/default.lvl");
+        IBoard a = fromLevelFile(Constants.ASSET_PATH + "/default.lvl");
         IBoard b = a.copy();
 
         assertEquals(a, b);
@@ -107,7 +107,7 @@ public class TestBoard {
 
     @Test
     public void copyBoard() {
-        IBoard a = fromLevelFile("assets/default.lvl");
+        IBoard a = fromLevelFile(Constants.ASSET_PATH + "/default.lvl");
         IBoard b = a.copy();
 
         assertEquals(a, b);
@@ -152,10 +152,13 @@ public class TestBoard {
         a.executeMove(Move.STAY); // Seed.DEFAULT_FUSE - 4 | 1
         a.executeMove(Move.STAY); // Seed.DEFAULT_FUSE - 5 | 0
 
+        for (int i = 0; i < Seed.DEFAULT_FUSE - 5; i++)
+            a.executeMove(Move.STAY);
+
         Rainbow expectedRainbow = new Rainbow(pos, Rainbow.DEFAULT_DURATION - 1);
 
         assertEquals(1, a.getRainbows().size());
-        assertEquals(expectedRainbow, a.at(pos).get(1));
+        assertThat(a.at(pos), hasItem(expectedRainbow));
         assertEquals(expectedRainbow, a.getRainbows().get(0));
     }
 
@@ -184,6 +187,34 @@ public class TestBoard {
         a.executeMove(Move.STAY); // Seed.DEFAULT_FUSE - 3 = 2
         a.executeMove(Move.STAY); // Seed.DEFAULT_FUSE - 4 = 1
         a.executeMove(Move.STAY); // Seed.DEFAULT_FUSE - 1 = 0
+
+        for (int i = 0; i < Seed.DEFAULT_FUSE - 5; i++)
+            a.executeMove(Move.STAY);
+
+        assertEquals(2, a.getRainbows().size());
+        assertEquals(0, a.getClouds().size());
+    }
+
+    @Test
+    public void rainbowsStopAtClouds() {
+        List<String> lvl = new ArrayList<String>();
+
+        lvl.add("#####");
+        lvl.add("#pc.#");
+        lvl.add("#####");
+
+        IBoard a = fromLevelRepresentation(lvl);
+
+        assertEquals(1, a.getClouds().size());
+
+        a.executeMove(Move.SPAWN); // Seed.DEFAULT_FUSE - 1 = 4
+        a.executeMove(Move.STAY); // Seed.DEFAULT_FUSE - 2 = 3
+        a.executeMove(Move.STAY); // Seed.DEFAULT_FUSE - 3 = 2
+        a.executeMove(Move.STAY); // Seed.DEFAULT_FUSE - 4 = 1
+        a.executeMove(Move.STAY); // Seed.DEFAULT_FUSE - 5 = 0
+
+        for (int i = 0; i < Seed.DEFAULT_FUSE - 5; i++)
+            a.executeMove(Move.STAY);
 
         assertEquals(2, a.getRainbows().size());
         assertEquals(0, a.getClouds().size());
@@ -223,17 +254,22 @@ public class TestBoard {
             public EndCondition copy() {
                 return this;
             }
+
+            @Override
+            public String getOutcome() {
+                return "TEST";
+            }
         });
 
         assertEquals(2, a.getUnicorns().size());
 
         a.executeMove(Move.SPAWN);
+        a.executeMove(Move.SPAWN);
+        for (int i = 0; i < Seed.DEFAULT_FUSE - 2; i++)
+            a.executeMove(Move.STAY);
 
-        a.executeMove(Move.SPAWN); // Seed.DEFAULT_FUSE - 1 = 4
-        a.executeMove(Move.STAY); // Seed.DEFAULT_FUSE - 2 = 3
-        a.executeMove(Move.STAY); // Seed.DEFAULT_FUSE - 3 = 2
-        a.executeMove(Move.STAY); // Seed.DEFAULT_FUSE - 4 = 1
-        a.executeMove(Move.STAY); // Seed.DEFAULT_FUSE - 1 = 0
+        assertFalse(a.isRunning());
+        assertFalse(a.executeMove(Move.STAY));
 
         assertEquals(3, a.getRainbows().size());
         assertEquals(1, actualSailing.obj.size());
@@ -278,6 +314,26 @@ public class TestBoard {
         assertEquals(a.at(new V(4, 1)).get(1), new Marker(new V(4, 1), -1));
 
         assertEquals(a.at(new V(5, 1)).get(0), new Path(new V(5, 1)));
+    }
+
+    @Test
+    public void markersCorrect() {
+        IBoard a = fromLevelRepresentation(Arrays.asList("#######", "#..p..#", "#.....#", "#.....#", "#..m..#",
+                "#######"));
+        assertEquals(1, a.getMarkers().size());
+        assertThat(a.getMarkers(), hasItem(new Marker(new V(3, 4))));
+    }
+
+    @Test
+    public void blankIsNotWalkable() {
+        List<String> lines = new ArrayList<>();
+        lines.add("#####");
+        lines.add("#p m#");
+        lines.add("#####");
+
+        IBoard board = fromLevelRepresentation(lines);
+
+        assertFalse(board.isPassable(new V(2, 1)));
     }
 
     private static byte[] toBytes(IBoard board) {
@@ -328,7 +384,7 @@ public class TestBoard {
 
     @Test
     public void isSerializable3() throws Exception {
-        IBoard board = fromLevelFile("assets/default.lvl");
+        IBoard board = fromLevelFile(Constants.ASSET_PATH + "/default.lvl");
         board.executeMove(Move.LEFT);
         board.executeMove(Move.RIGHT);
         board.executeMove(Move.DOWN);

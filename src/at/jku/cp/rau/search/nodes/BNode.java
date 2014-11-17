@@ -95,4 +95,9 @@ public class BNode implements Node<BNode>, ContainsBoard, ContainsMove {
         return board.toString();
     }
 
+    @Override
+    public boolean isLeaf() {
+        return !board.isRunning();
+    }
+
 }

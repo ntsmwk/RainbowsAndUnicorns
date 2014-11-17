@@ -15,6 +15,10 @@ public class GraphTelemetry<T extends Node<T>> implements Node<GraphTelemetry<T>
         this.graph = graph;
     }
 
+    public void addVertexWeight(T vertex, double weight) {
+        graph.addVertexWeight(vertex, weight);
+    }
+
     @Override
     public int hashCode() {
         final int prime = 31;
@@ -65,4 +69,8 @@ public class GraphTelemetry<T extends Node<T>> implements Node<GraphTelemetry<T>
         return content.toString();
     }
 
+    @Override
+    public boolean isLeaf() {
+        return content.isLeaf();
+    }
 }

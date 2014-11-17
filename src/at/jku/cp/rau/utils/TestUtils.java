@@ -12,11 +12,16 @@ public abstract class TestUtils {
     }
 
     public static <T> void assertListEquals(List<T> e, List<T> a) {
-
         if (e.size() != a.size()) {
-            System.out.println("list sizes differ!");
-            System.out.println("expected : " + e);
-            System.out.println("actual   : " + a);
+            System.out.println(String.format("list sizes differ! (%d != %d)", e.size(), a.size()));
+            for (int i = 0; i < Math.min(e.size(), a.size()); i++) {
+                System.out.println("------------------------------------");
+                System.out.println(String.format("expected:%d", i));
+                System.out.println(e.get(i));
+                System.out.println(String.format("actual:%d", i));
+                System.out.println(a.get(i));
+                System.out.println("----------------");
+            }
             fail();
         }
         StringBuilder sb = new StringBuilder();

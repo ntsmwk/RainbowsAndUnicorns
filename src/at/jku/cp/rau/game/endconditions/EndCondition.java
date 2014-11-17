@@ -29,4 +29,6 @@ public interface EndCondition {
     public int hashCode();
 
     public EndCondition copy();
+
+    public String getOutcome();
 }

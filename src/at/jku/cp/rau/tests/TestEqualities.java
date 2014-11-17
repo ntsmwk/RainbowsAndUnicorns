@@ -72,8 +72,8 @@ public class TestEqualities {
     public void boards() {
         assertEquals(new Board(), new Board());
 
-        Board a = Board.fromLevelFile("assets/default.lvl");
-        Board b = Board.fromLevelFile("assets/default.lvl");
+        Board a = Board.fromLevelFile(Constants.ASSET_PATH + "/default.lvl");
+        Board b = Board.fromLevelFile(Constants.ASSET_PATH + "/default.lvl");
 
         assertEquals(a, b);
 
@@ -84,8 +84,8 @@ public class TestEqualities {
 
         assertEquals(a, b);
 
-        IBoard c = Board.fromLevelFile("assets/default.lvl");
-        Board d = Board.fromLevelFile("assets/default.lvl");
+        IBoard c = Board.fromLevelFile(Constants.ASSET_PATH + "/default.lvl");
+        Board d = Board.fromLevelFile(Constants.ASSET_PATH + "/default.lvl");
 
         // Unicorn player0 = c.getMyUnicorn(0);
         c.executeMove(Move.DOWN);
@@ -99,7 +99,7 @@ public class TestEqualities {
 
     @Test
     public void boards2() {
-        IBoard a = Board.fromLevelFile("assets/default.lvl");
+        IBoard a = Board.fromLevelFile(Constants.ASSET_PATH + "/default.lvl");
         a.getMarkers().add(new Marker(new V(1, 1), -1));
         a.getSeeds().add(new Seed(new V(7, 1), 2, 2));
         a.getRainbows().add(new Rainbow(new V(6, 1), 2));
@@ -111,7 +111,7 @@ public class TestEqualities {
 
     @Test
     public void boardsWithoutTicks() {
-        Board a = Board.fromLevelFile("assets/default.lvl");
+        Board a = Board.fromLevelFile(Constants.ASSET_PATH + "/default.lvl");
 
         IBoard b = a.copy();
         b.executeMove(Move.STAY);
@@ -121,7 +121,7 @@ public class TestEqualities {
 
     @Test
     public void boardsBackAndForth() {
-        Board a = Board.fromLevelFile("assets/default.lvl");
+        Board a = Board.fromLevelFile(Constants.ASSET_PATH + "/default.lvl");
 
         IBoard b = a.copy();
         b.executeMove(Move.RIGHT);

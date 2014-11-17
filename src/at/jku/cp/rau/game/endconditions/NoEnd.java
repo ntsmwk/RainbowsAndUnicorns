@@ -21,4 +21,9 @@ final public class NoEnd implements EndCondition {
     public EndCondition copy() {
         return (EndCondition) this;
     }
+
+    @Override
+    public String getOutcome() {
+        return "NOEND";
+    }
 }
