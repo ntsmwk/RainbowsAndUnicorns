@@ -6,6 +6,8 @@ import at.jku.cp.rau.game.functions.Function;
 import at.jku.cp.rau.search.Node;
 import at.jku.cp.rau.utils.Pair;
 
+
+// Mehmet des mochst du!!!!!
 public class MinMaxSearch<T extends Node<T>> implements AdversarialSearch<T> {
 
     /**

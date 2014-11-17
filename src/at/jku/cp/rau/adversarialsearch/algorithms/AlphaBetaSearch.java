@@ -6,6 +6,9 @@ import at.jku.cp.rau.game.functions.Function;
 import at.jku.cp.rau.search.Node;
 import at.jku.cp.rau.utils.Pair;
 
+
+
+// Haha Methmet, des moch i !!!!!! -> Berti
 public class AlphaBetaSearch<T extends Node<T>> implements AdversarialSearch<T> {
 
     /**
