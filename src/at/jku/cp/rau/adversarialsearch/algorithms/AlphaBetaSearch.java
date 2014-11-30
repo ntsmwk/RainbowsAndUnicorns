@@ -11,7 +11,6 @@ public class AlphaBetaSearch<T extends Node<T>> implements AdversarialSearch<T> 
 
     private SearchLimitingPredicate<T> searchLimitingPredicate;
     private Function<T> evalFunction;
-    private T current;
 
     /**
      * To limit the extent of the search, this implementation should honor a
@@ -25,24 +24,32 @@ public class AlphaBetaSearch<T extends Node<T>> implements AdversarialSearch<T> 
 
     public Pair<T, Double> search(T start, Function<T> evalFunction) {
         this.evalFunction = evalFunction;
-        double heuristic = max(start, 0, Double.MIN_VALUE, Double.MAX_VALUE);
-        return new Pair<T, Double>(current, heuristic);
+
+        Pair<T, Double> maxValue = new Pair<>(null, 0.0);
+        for (T neighbour : start.adjacent()) {
+            double value = min(neighbour, START_DEPTH + 1, maxValue.s, Double.MAX_VALUE);
+
+            if (maxValue.f == null || isGreaterThan(value, maxValue.s)) {
+                maxValue.s = value;
+                maxValue.f = neighbour;
+            }
+        }
+        return maxValue;
     }
 
     private double max(T node, int depth, double alpha, double beta) {
-        if (!searchLimitingPredicate.expandFurther(depth, node)) {
-            return evalFunction.value(node);
+        if (isSearchLimitPredicateTrue(node, depth)) {
+            return evaluateValue(node);
         }
+
         double maxValue = alpha;
         for (T neighbour : node.adjacent()) {
-
             double value = min(neighbour, depth + 1, maxValue, beta);
-            if (value > maxValue) {
+
+            if (isGreaterThan(value, maxValue)) {
                 maxValue = value;
                 if (maxValue >= beta) {
-                }
-                if (depth == START_DEPTH) {
-                    current = neighbour;
+                    break;
                 }
             }
         }
@@ -50,14 +57,15 @@ public class AlphaBetaSearch<T extends Node<T>> implements AdversarialSearch<T> 
     }
 
     private double min(T node, int depth, double alpha, double beta) {
-        if (!searchLimitingPredicate.expandFurther(depth, node)) {
-            return evalFunction.value(node);
+        if (isSearchLimitPredicateTrue(node, depth)) {
+            return evaluateValue(node);
         }
+
         double minValue = beta;
         for (T neighbour : node.adjacent()) {
-
             double value = max(neighbour, depth + 1, alpha, minValue);
-            if (value < minValue) {
+
+            if (isSmallerThan(value, minValue)) {
                 minValue = value;
                 if (minValue <= alpha) {
                     break;
@@ -65,5 +73,21 @@ public class AlphaBetaSearch<T extends Node<T>> implements AdversarialSearch<T> 
             }
         }
         return minValue;
+    }
+
+    private double evaluateValue(T node) {
+        return evalFunction.value(node);
+    }
+
+    private boolean isSearchLimitPredicateTrue(T node, int depth) {
+        return node.adjacent().isEmpty() || !searchLimitingPredicate.expandFurther(depth, node);
+    }
+
+    private boolean isGreaterThan(double value, double maxValue) {
+        return value > maxValue;
+    }
+
+    private boolean isSmallerThan(double value, double minValue) {
+        return value < minValue;
     }
 }
