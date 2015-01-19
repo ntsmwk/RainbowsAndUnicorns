@@ -61,7 +61,8 @@ public class TestPriorities {
         _expectedBoard.add("####");
 
         Board expectedBoard = Board.fromLevelRepresentation(_expectedBoard);
-        expectedBoard.getSeeds().add(new Seed(new V(1, 1), Seed.DEFAULT_FUSE - 2, Seed.DEFAULT_RANGE));
+        expectedBoard.getSeeds().add(
+                new Seed(new V(1, 1), Seed.DEFAULT_SPAWNED, Seed.DEFAULT_FUSE - 2, Seed.DEFAULT_RANGE));
         Field field = Board.class.getDeclaredField("tick");
         field.setAccessible(true);
         field.set(expectedBoard, 2);

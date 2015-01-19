@@ -15,7 +15,7 @@ public class RandomCost<T extends ContainsPos> implements Function<T> {
         costs = new int[width][height];
         for (int x = 0; x < width; x++) {
             for (int y = 0; y < height; y++) {
-                costs[x][y] = random.nextInt(upperBound);
+                costs[x][y] = 1 + random.nextInt(upperBound - 1);
             }
         }
     }

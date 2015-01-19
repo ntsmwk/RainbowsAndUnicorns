@@ -205,8 +205,8 @@ public class RenderUtils {
         return "n" + Integer.toHexString(o.hashCode()) + "_" + ((ContainsBoard) o).getBoard().getTick();
     }
 
-    public static <T extends Node<T> & ContainsBoard & ContainsMove> void visualizeSearchTree(String prefix,
-            Graph<T> graph, List<T> path) {
+    public static <T extends ContainsBoard & ContainsMove> void visualizeSearchTree(String prefix, Graph<T> graph,
+            List<T> path) {
         rmrfMkdir(prefix);
 
         Set<String> pathTest = new HashSet<>();
@@ -216,25 +216,32 @@ public class RenderUtils {
             pathTest.add(previous + "_" + current);
         }
 
-        T goal = path.get(path.size() - 1);
+        IBoard goal = null;
+        if (path.size() > 0) {
+            goal = path.get(path.size() - 1).getBoard();
+        }
 
         List<String> dot = new ArrayList<>();
         dot.add("digraph G {");
         dot.add("node [penwidth=0, label=\"\"];");
         dot.add("edge [fontname=\"Courier\", fontsize=8];");
-        dot.add("root [label=\"root\"];");
+
+        if (path.size() > 0)
+            dot.add("root [label=\"root\"];");
 
         Map<String, String> images = new HashMap<>();
         for (Pair<T, T> e : graph.getEdges()) {
-            images.put(nameTick(e.f), writeBoardAsPNG(prefix, e.f.getBoard(), goal.getBoard()));
-            images.put(nameTick(e.s), writeBoardAsPNG(prefix, e.s.getBoard(), goal.getBoard()));
+            images.put(nameTick(e.f), writeBoardAsPNG(prefix, e.f.getBoard(), goal));
+            images.put(nameTick(e.s), writeBoardAsPNG(prefix, e.s.getBoard(), goal));
         }
 
         for (Map.Entry<String, String> entry : images.entrySet()) {
             dot.add(String.format("%s [image=\"%s\"];", entry.getKey(), entry.getValue()));
         }
 
-        dot.add(String.format("root -> %s [color=\"magenta\"];", nameTick(path.get(0))));
+        if (path.size() > 0) {
+            dot.add(String.format("root -> %s [color=\"magenta\"];", nameTick(path.get(0))));
+        }
 
         for (Pair<T, T> e : graph.getEdges()) {
             String colorcode = Integer.toHexString(e.f.getBoard().getCurrentUnicorn().id == 0 ? hexblue : hexred);
@@ -244,8 +251,11 @@ public class RenderUtils {
 
             String taken = pathTest.contains(previous + "_" + current) ? ", penwidth=3" : ", style=\"dotted\"";
 
-            dot.add(String.format("%s -> %s [label=\"%s\", color=\"#%s\"%s];", nameTick(e.f), nameTick(e.s), e.s
-                    .getMove().toString(), colorcode, taken));
+            Double score = graph.getVertexWeight(e.s);
+            String scoreString = (score != null) ? String.format(" (score:%f)", score) : "";
+
+            dot.add(String.format("%s -> %s [label=\"%s%s\", color=\"#%s\"%s];", nameTick(e.f), nameTick(e.s), e.s
+                    .getMove().toString(), scoreString, colorcode, taken));
 
         }
         dot.add("}\n");
@@ -321,11 +331,19 @@ public class RenderUtils {
         dot.add(String.format("root -> %s [color=\"magenta\"];", name(start)));
 
         for (Pair<T, T> e : graph.getWeightedEdges()) {
-            String colorcode = Integer.toHexString(e.f.getBoard().getCurrentUnicorn().id == 0 ? hexblue : hexred);
+
+            int code = 0x00000000;
+
+            IBoard board = e.f.getBoard();
+            if (board.isRunning()) {
+                code = board.getCurrentUnicorn().id == 0 ? hexblue : hexred;
+            }
+
+            String colorcode = Integer.toHexString(code);
             String taken = pathTest.contains(e) ? ", penwidth=3" : ", style=\"dotted\"";
 
-            dot.add(String.format("%s -> %s [label=\"%s (%d)\", color=\"#%s\"%s];", name(e.f), name(e.s), e.s.getMove()
-                    .toString(), graph.getWeight(e), colorcode, taken));
+            dot.add(String.format("%s -> %s [label=\"%s (%d)\", color=\"#%s\"%s];", name(e.f), name(e.s),
+                    e.s.getMove(), graph.getWeight(e), colorcode, taken));
 
         }
         dot.add("}\n");

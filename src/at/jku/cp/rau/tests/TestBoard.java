@@ -1,5 +1,6 @@
 package at.jku.cp.rau.tests;
 
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.core.IsCollectionContaining.hasItem;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -7,6 +8,7 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -28,7 +30,9 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
+import at.jku.cp.rau.game.BitBoard;
 import at.jku.cp.rau.game.Board;
+import at.jku.cp.rau.game.FasterBoard;
 import at.jku.cp.rau.game.IBoard;
 import at.jku.cp.rau.game.endconditions.EndCondition;
 import at.jku.cp.rau.game.endconditions.NoEnd;
@@ -46,6 +50,10 @@ public class TestBoard {
     @Parameters
     public static Collection<Object[]> generateParams() {
         List<Object[]> params = new ArrayList<Object[]>();
+
+        params.add(new Object[] { Board.class });
+        params.add(new Object[] { FasterBoard.class });
+        params.add(new Object[] { BitBoard.class });
 
         return params;
     }
@@ -140,6 +148,54 @@ public class TestBoard {
     }
 
     @Test
+    public void seedCounter() {
+        IBoard a = fromLevelRepresentation(Arrays.asList("###", "#p#", "###"));
+
+        assertTrue(a.executeMove(Move.SPAWN));
+        assertEquals(Unicorn.MAX_SEEDS - 1, a.getUnicorns().get(0).seeds);
+    }
+
+    @Test
+    public void seedCounterResets() {
+        IBoard a = fromLevelRepresentation(Arrays.asList("######", "#p...#", "######"));
+
+        assertTrue(a.executeMove(Move.SPAWN));
+        assertEquals(Unicorn.MAX_SEEDS - 1, a.getUnicorns().get(0).seeds);
+
+        a.executeMove(Move.RIGHT);
+        a.executeMove(Move.RIGHT);
+        a.executeMove(Move.RIGHT);
+
+        for (int i = 0; i < Seed.DEFAULT_FUSE - Seed.DEFAULT_RANGE - 1; i++)
+            a.executeMove(Move.STAY);
+
+        assertEquals(0, a.getSeeds().size());
+        assertEquals(3, a.getRainbows().size());
+        assertEquals(Unicorn.MAX_SEEDS, a.getUnicorns().get(0).seeds);
+    }
+
+    @Test
+    public void noMoreThanMaxSeeds() {
+        IBoard a = fromLevelRepresentation(Arrays.asList("#########", "#p......#", "#########"));
+
+        assertTrue(a.executeMove(Move.SPAWN));
+        assertTrue(a.executeMove(Move.RIGHT));
+
+        assertTrue(a.executeMove(Move.SPAWN));
+        assertTrue(a.executeMove(Move.RIGHT));
+
+        assertThat(a.getPossibleMoves(), hasItem(Move.SPAWN));
+
+        assertTrue(a.executeMove(Move.SPAWN));
+        assertTrue(a.executeMove(Move.RIGHT));
+
+        assertEquals(3, a.getSeeds().size());
+
+        assertThat(a.getPossibleMoves(), not(hasItem(Move.SPAWN)));
+        assertFalse(a.executeMove(Move.SPAWN));
+    }
+
+    @Test
     public void updateSeedsAndRainbows() {
         IBoard a = fromLevelRepresentation(Arrays.asList("###", "#p#", "###"));
         a.setEndCondition(new NoEnd());
@@ -221,6 +277,27 @@ public class TestBoard {
     }
 
     @Test
+    public void checkRemovable() {
+        List<String> lvl = new ArrayList<String>();
+
+        lvl.add("########");
+        lvl.add("#p...cm#");
+        lvl.add("########");
+
+        IBoard a = fromLevelRepresentation(lvl);
+
+        assertTrue(a.isRemovable(new V(5, 1)));
+        assertTrue(a.executeMove(Move.RIGHT));
+        assertTrue(a.executeMove(Move.RIGHT));
+        assertTrue(a.executeMove(Move.RIGHT));
+        assertFalse(a.executeMove(Move.RIGHT));
+        assertTrue(a.executeMove(Move.SPAWN));
+        assertTrue(a.executeMove(Move.LEFT));
+        assertTrue(a.executeMove(Move.LEFT));
+        assertTrue(a.executeMove(Move.LEFT));
+    }
+
+    @Test
     public void updateUnicorns() {
         List<String> lvl = new ArrayList<String>();
 
@@ -280,9 +357,10 @@ public class TestBoard {
         File lvlFile = new File(Files.createTempDirectory(null).toString(), "test.lvl");
 
         Board expectedBoard = Board.fromLevelRepresentation(Arrays.asList("#######", "#.pcm.#", "#######"));
-        expectedBoard.getSeeds().add(new Seed(new V(1, 1), 1, 1));
-        expectedBoard.getSeeds().add(new Seed(new V(5, 1), 2, 1));
-        expectedBoard.executeMove(Move.STAY);
+        expectedBoard.executeMove(Move.LEFT);
+        expectedBoard.executeMove(Move.SPAWN);
+        expectedBoard.executeMove(Move.RIGHT);
+        expectedBoard.executeMove(Move.SPAWN);
 
         Board.toFile(lvlFile.toString(), expectedBoard);
         IBoard actualBoard = Board.fromFile(lvlFile.toString());
@@ -305,7 +383,7 @@ public class TestBoard {
 
         assertEquals(a.at(new V(2, 1)).get(0), new Path(new V(2, 1)));
         assertEquals(a.at(new V(2, 1)).get(1), new Unicorn(new V(2, 1), 0));
-        assertEquals(a.at(new V(2, 1)).get(2), new Seed(new V(2, 1), Seed.DEFAULT_FUSE - 1, Seed.DEFAULT_RANGE));
+        assertEquals(a.at(new V(2, 1)).get(2), new Seed(new V(2, 1), 0, Seed.DEFAULT_FUSE - 1, Seed.DEFAULT_RANGE));
 
         assertEquals(a.at(new V(3, 1)).get(0), new Path(new V(3, 1)));
         assertEquals(a.at(new V(3, 1)).get(1), new Cloud(new V(3, 1)));
@@ -363,8 +441,8 @@ public class TestBoard {
     @Test
     public void isSerializable() throws Exception {
         IBoard board = fromLevelRepresentation(Arrays.asList("#######", "#.pcm.#", "#######"));
-        board.getSeeds().add(new Seed(new V(1, 1), 1, 1));
-        board.getSeeds().add(new Seed(new V(5, 1), 2, 1));
+        board.getSeeds().add(new Seed(new V(1, 1), 0, 1, 1));
+        board.getSeeds().add(new Seed(new V(5, 1), 0, 2, 1));
 
         assertEquals(board, fromBytes(toBytes(board)));
     }

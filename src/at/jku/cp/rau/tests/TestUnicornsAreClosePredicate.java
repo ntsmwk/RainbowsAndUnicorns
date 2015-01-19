@@ -1,26 +1,30 @@
 package at.jku.cp.rau.tests;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import java.util.Arrays;
 
 import org.junit.Test;
 
 import at.jku.cp.rau.adversarialsearch.predicates.UnicornsAreClosePredicate;
+import at.jku.cp.rau.game.BitBoard;
 import at.jku.cp.rau.game.Board;
 import at.jku.cp.rau.game.IBoard;
 import at.jku.cp.rau.search.nodes.BNode;
 
 public class TestUnicornsAreClosePredicate {
 
-    static IBoard b0 = Board.fromLevelRepresentation(Arrays.asList("##########", "#pp......#", "##########"));
+    static IBoard b0 = new BitBoard(Board.fromLevelRepresentation(Arrays.asList("##########", "#pp......#",
+            "##########")));
 
-    static IBoard b1 = Board.fromLevelRepresentation(Arrays.asList("##########", "#p..p....#", "##########"));
+    static IBoard b1 = new BitBoard(Board.fromLevelRepresentation(Arrays.asList("##########", "#p..p....#",
+            "##########")));
 
-    static IBoard b2 = Board.fromLevelRepresentation(Arrays.asList("##########", "#p...p...#", "##########"));
+    static IBoard b2 = new BitBoard(Board.fromLevelRepresentation(Arrays.asList("##########", "#p...p...#",
+            "##########")));
 
-    static IBoard b3 = Board.fromLevelRepresentation(Arrays.asList("##########", "#p.....p.#", "##########"));
+    static IBoard b3 = new BitBoard(Board.fromLevelRepresentation(Arrays.asList("##########", "#p.....p.#",
+            "##########")));
 
     @Test
     public void test1() {

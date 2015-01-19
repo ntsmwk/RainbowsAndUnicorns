@@ -7,7 +7,7 @@ import at.jku.cp.rau.search.nodes.ContainsBoard;
 
 public class UnicornsAreClosePredicate<T extends ContainsBoard> extends SoftDepthLimitingPredicate<T> {
 
-    int unicornDistance;
+    public final int unicornDistance;
 
     /**
      * Unicorns are close Predicate
@@ -30,9 +30,6 @@ public class UnicornsAreClosePredicate<T extends ContainsBoard> extends SoftDept
     public boolean softLimitExceedingCriteria(int depth, T state) {
 
         IBoard board = state.getBoard();
-
-        if (!board.isRunning())
-            return false;
 
         V start = board.getUnicorns().get(0).pos;
         V end = board.getUnicorns().get(1).pos;
