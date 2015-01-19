@@ -4,8 +4,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-import java.util.Set;
-import java.util.TreeSet;
 
 import at.jku.cp.rau.game.IBoard;
 import at.jku.cp.rau.game.endconditions.EndCondition;
