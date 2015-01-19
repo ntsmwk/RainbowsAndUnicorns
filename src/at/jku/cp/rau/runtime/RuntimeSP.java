@@ -4,6 +4,8 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -17,6 +19,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import at.jku.cp.rau.game.Board;
+import at.jku.cp.rau.game.BoardWithHistory;
 import at.jku.cp.rau.game.IBoard;
 import at.jku.cp.rau.game.endconditions.PointCollecting;
 import at.jku.cp.rau.game.objects.Move;
@@ -32,32 +35,31 @@ public class RuntimeSP {
     private static final int IMPROPER_MOVE_LIMIT = 4;
     private static final int IMPROPER_TIME_LIMIT = 5;
     private static final int IMPROPER_SEED = 6;
-    private static final int UNFORESEEN_CONSEQUENCES = 7;
+    private static final int INVALID_LOGDIR = 7;
+    private static final int UNFORESEEN_CONSEQUENCES = 8;
 
     public static void main(String[] args) throws FileNotFoundException {
-        if (args.length < 5) {
+        if (args.length != 7) {
             System.out
-                    .println("usage: java at.jku.cp.rau.runtime.Runtime <p0> <p1> <level> <timelimit [s]> <movelimit> [<seed>] [<logdir>]");
+                    .println("usage: java at.jku.cp.rau.runtime.Runtime <p0> <p1> <level> <timelimit [s]> <movelimit> <seed> <logdir>");
             System.exit(WRONG_NARGS);
         }
 
-        long seed = System.currentTimeMillis();
-        if (args.length == 6) {
-            try {
-                seed = Long.parseLong(args[5]);
-            } catch (NumberFormatException e) {
-                System.out.println("seed number is not a 'long' integer.");
-                System.exit(IMPROPER_SEED);
-            }
+        long seed = 0L;
+        try {
+            seed = Long.parseLong(args[5]);
+        } catch (NumberFormatException e) {
+            System.out.println("seed number is not a 'long' integer.");
+            System.exit(IMPROPER_SEED);
         }
 
-        if (args.length == 7) {
-            String logdir = args[6];
-
-            if (null != logdir) {
-                System.setOut(new PrintStream(new File(logdir + File.separator + "log")));
-                System.setErr(new PrintStream(new File(logdir + File.separator + "err")));
-            }
+        String logdir = args[6];
+        if (Files.exists(Paths.get(logdir))) {
+            System.setOut(new PrintStream(new File(logdir + File.separator + "log")));
+            System.setErr(new PrintStream(new File(logdir + File.separator + "err")));
+        } else {
+            System.out.println("logdir '" + logdir + "' does not exist");
+            System.exit(INVALID_LOGDIR);
         }
 
         long timeLimit = 0L;
@@ -76,11 +78,10 @@ public class RuntimeSP {
             System.out.println("move limit is not an 'int'.");
             System.exit(IMPROPER_MOVE_LIMIT);
         }
+
         try {
-            // so this is either seeded with the time, or from the command line,
-            // and
-            // the first
-            // two longs are used as seeds to the RNG's for the players
+            // the first two longs are used as seeds to the RNG's for the
+            // players
             Random masterRandom = new Random(seed);
 
             List<JVMPlayer> players = new ArrayList<>();
@@ -92,9 +93,9 @@ public class RuntimeSP {
                     JVMPlayer jvmplayer = new JVMPlayer(9998 + i, classFilename);
                     players.add(jvmplayer);
 
-                    PlayerInfo info = new PlayerInfo(timeLimit, moveLimit, i, new Random(masterRandom.nextLong()));
+                    PlayerInfo info = new PlayerInfo(timeLimit, moveLimit / 2, i, (i + 1) % 2, new Random(
+                            masterRandom.nextLong()));
                     playerInfoMapping.put(jvmplayer, info);
-
                 } catch (IOException | InterruptedException e) {
                     e.printStackTrace();
                     System.exit(PLAYER_INSTANTIATION_FAILED);
@@ -107,21 +108,21 @@ public class RuntimeSP {
                 System.exit(LEVELFILE_NOTFOUND);
             }
 
-            Board masterBoard = Board.fromLevelFile(levelName);
+            BoardWithHistory historyBoard = new BoardWithHistory(Board.fromLevelFile(levelName));
             PointCollecting pointCollecting = new PointCollecting();
-            masterBoard.setEndCondition(pointCollecting);
+            historyBoard.setEndCondition(pointCollecting);
 
             ExecutorService executor = Executors.newSingleThreadExecutor();
 
             boolean inTime = true;
             boolean inMemory = true;
-            while (masterBoard.isRunning() && inTime && inMemory) {
-                final JVMPlayer player = players.get(masterBoard.getCurrentUnicorn().id);
+            while (historyBoard.isRunning() && historyBoard.getTick() < moveLimit && inTime && inMemory) {
+                final JVMPlayer player = players.get(historyBoard.getCurrentUnicorn().id);
                 PlayerInfo info = playerInfoMapping.get(player);
 
                 // make a copy of the master board, so no state is shared
                 // between players
-                final IBoard copyBoard = masterBoard.deepCopy();
+                final IBoard copyBoard = historyBoard.getBoard().deepCopy();
 
                 // copy all the additional state that could be changed by
                 // the getNextMove method
@@ -137,7 +138,17 @@ public class RuntimeSP {
                 });
 
                 try {
+                    // set the timeout + grace-value for communication
                     Move move = future.get(copyInfo.remainingTime + 100, TimeUnit.MILLISECONDS);
+
+                    info.remainingTime = info.remainingTime - player.getTimeTaken();
+                    info.remainingMoves--;
+
+                    // if the future didn't throw b/c of the grace-value, throw
+                    // if time ran out
+                    if (info.remainingTime <= 0) {
+                        throw new TimeoutException();
+                    }
 
                     // if for some reason the player method returns a 'null',
                     // replace it with the 'do-nothing' move (execute a 'STAY'
@@ -146,26 +157,23 @@ public class RuntimeSP {
                         move = Move.STAY;
                     }
 
-                    masterBoard.executeMove(move);
-
-                    info.remainingTime = info.remainingTime - player.getTimeTaken();
+                    historyBoard.executeMove(move);
                 } catch (TimeoutException e) {
-                    Unicorn loser = masterBoard.getCurrentUnicorn();
+                    Unicorn loser = historyBoard.getCurrentUnicorn();
 
                     // take the losing player off the board
-                    masterBoard.getUnicorns().remove(loser);
+                    historyBoard.getUnicorns().remove(loser);
 
                     // set the winner
                     pointCollecting.setWinnerOnTimeout(loser.id == 0 ? 1 : 0);
                     info.remainingTime = 0;
                     inTime = false;
                 } catch (Exception e) {
-                    // in all other cases, we'll treat that as a OOM Exception
-                    // ...
-                    Unicorn loser = masterBoard.getCurrentUnicorn();
+                    // all other cases, we'll treat as an OOM Exception
+                    Unicorn loser = historyBoard.getCurrentUnicorn();
 
                     // take the losing player off the board
-                    masterBoard.getUnicorns().remove(loser);
+                    historyBoard.getUnicorns().remove(loser);
 
                     // set the winner
                     pointCollecting.setWinnerOnMemout(loser.id == 0 ? 1 : 0);
@@ -178,14 +186,17 @@ public class RuntimeSP {
 
             // <tick> <winner> <score-p0> <score-p1> <time-p0> <time-p1> <p0>
             // <p1> <level> <timelimit> <movelimit> <seed>
-            System.out.println(String.format("tick:%d\n" + "outcome:%s\n" + "winner:%d\n" + "score_p0:%d\n"
+            PrintStream resultfile = new PrintStream(new File(logdir + File.separator + "result.yaml"));
+            resultfile.println(String.format("tick:%d\n" + "outcome:%s\n" + "winner:%d\n" + "score_p0:%d\n"
                     + "score_p1:%d\n" + "time_p0:%d\n" + "time_p1:%d\n" + "p0:%s\n" + "p1:%s\n" + "level:%s\n"
-                    + "timelimit:%s\n" + "movelimit:%s\n" + "seed:%d\n", masterBoard.getTick(), masterBoard
-                    .getEndCondition().getOutcome(), masterBoard.getEndCondition().getWinner(), pointCollecting
+                    + "timelimit:%s\n" + "movelimit:%s\n" + "seed:%s\n", historyBoard.getTick(), historyBoard
+                    .getEndCondition().getOutcome(), historyBoard.getEndCondition().getWinner(), pointCollecting
                     .getScore(0), pointCollecting.getScore(1), playerInfoMapping.get(players.get(0)).remainingTime,
                     playerInfoMapping.get(players.get(1)).remainingTime, args[0], args[1], args[2], args[3], args[4],
-                    seed));
+                    args[5]));
 
+            resultfile.flush();
+            resultfile.close();
         } catch (Throwable t) {
             System.out.println("unforseen consequences...");
             t.printStackTrace();
@@ -195,5 +206,4 @@ public class RuntimeSP {
         // all in order ...
         System.exit(OK);
     }
-
 }

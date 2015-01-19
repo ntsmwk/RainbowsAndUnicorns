@@ -5,7 +5,7 @@ import java.util.List;
 public interface Node<T> {
     public T current();
 
-    public List<T> adjacent();
-
     public boolean isLeaf();
+
+    public List<T> adjacent();
 }

@@ -50,10 +50,10 @@ public class TestEqualities {
 
     @Test
     public void seeds() {
-        assertEquals(new Seed(new V(0, 1), 3, 5), new Seed(new V(0, 1), 3, 5));
-        assertNotEquals(new Seed(new V(1, 1), 3, 5), new Seed(new V(0, 1), 3, 5));
-        assertNotEquals(new Seed(new V(0, 1), 4, 5), new Seed(new V(0, 1), 3, 5));
-        assertNotEquals(new Seed(new V(0, 1), 3, 6), new Seed(new V(0, 1), 3, 5));
+        assertEquals(new Seed(new V(0, 1), 0, 3, 5), new Seed(new V(0, 1), 0, 3, 5));
+        assertNotEquals(new Seed(new V(1, 1), 0, 3, 5), new Seed(new V(0, 1), 0, 3, 5));
+        assertNotEquals(new Seed(new V(0, 1), 0, 4, 5), new Seed(new V(0, 1), 0, 3, 5));
+        assertNotEquals(new Seed(new V(0, 1), 0, 3, 6), new Seed(new V(0, 1), 0, 3, 5));
     }
 
     @Test
@@ -101,7 +101,7 @@ public class TestEqualities {
     public void boards2() {
         IBoard a = Board.fromLevelFile(Constants.ASSET_PATH + "/default.lvl");
         a.getMarkers().add(new Marker(new V(1, 1), -1));
-        a.getSeeds().add(new Seed(new V(7, 1), 2, 2));
+        a.getSeeds().add(new Seed(new V(7, 1), 0, 2, 2));
         a.getRainbows().add(new Rainbow(new V(6, 1), 2));
 
         IBoard b = a.deepCopy();

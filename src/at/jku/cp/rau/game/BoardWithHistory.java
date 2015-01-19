@@ -19,33 +19,50 @@ import at.jku.cp.rau.game.objects.Wall;
 public class BoardWithHistory implements Serializable, IBoard {
     private static final long serialVersionUID = 1L;
 
+    private IBoard start;
     private IBoard board;
     private List<Move> moves;
 
     public BoardWithHistory(IBoard board) {
+        this.start = board.deepCopy();
         this.board = board;
         this.moves = new ArrayList<>();
     }
 
-    public BoardWithHistory(IBoard board, List<Move> moves) {
-        this.board = board;
+    public BoardWithHistory(BoardWithHistory board, List<Move> moves) {
+        this.start = board.start;
+        this.board = board.copy();
         this.moves = new ArrayList<>();
         for (Move move : moves)
             this.moves.add(move);
+    }
+
+    public IBoard getBoard() {
+        return board;
     }
 
     public List<Move> getHistory() {
         return moves;
     }
 
+    public void toFile(String filename) {
+        // TODO: write save code
+        throw new UnsupportedOperationException();
+    }
+
+    public BoardWithHistory fromFile(String filename) {
+        // TODO: write loading code
+        throw new UnsupportedOperationException();
+    }
+
     @Override
     public IBoard copy() {
-        return new BoardWithHistory(board.copy(), moves);
+        return new BoardWithHistory(this, moves);
     }
 
     @Override
     public IBoard deepCopy() {
-        return new BoardWithHistory(board.deepCopy(), moves);
+        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -80,13 +97,9 @@ public class BoardWithHistory implements Serializable, IBoard {
 
     @Override
     public boolean executeMove(Move move) {
-        if (board.executeMove(move)) {
-            moves.add(move);
-            return true;
-        } else {
-            // don't record ...
-            return false;
-        }
+        boolean result = board.executeMove(move);
+        moves.add(move);
+        return result;
     }
 
     @Override

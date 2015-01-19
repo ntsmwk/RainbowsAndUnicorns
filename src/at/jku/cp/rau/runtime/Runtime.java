@@ -61,7 +61,8 @@ public class Runtime {
                 Player player = (Player) Class.forName(classFilename).newInstance();
                 players.add(player);
 
-                PlayerInfo info = new PlayerInfo(timeLimit, moveLimit, i, new Random(masterRandom.nextLong()));
+                PlayerInfo info = new PlayerInfo(timeLimit, moveLimit / 2, i, (i + 1) % 2, new Random(
+                        masterRandom.nextLong()));
                 playerInfoMapping.put(player, info);
 
             } catch (InstantiationException | IllegalAccessException | ClassNotFoundException e) {
@@ -86,7 +87,7 @@ public class Runtime {
         }
 
         try {
-            while (masterBoard.isRunning()) {
+            while (masterBoard.isRunning() && masterBoard.getTick() < moveLimit) {
                 System.out.println(masterBoard);
 
                 System.out.println(String.format("%d %d %d %d %d %d", masterBoard.getTick(), masterBoard
@@ -121,6 +122,7 @@ public class Runtime {
                 }
 
                 info.remainingTime = info.remainingTime - timeTaken;
+                info.remainingMoves--;
 
                 masterBoard.executeMove(move);
             }

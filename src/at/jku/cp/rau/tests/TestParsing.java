@@ -33,7 +33,7 @@ public class TestParsing {
 
     @Test
     public void roundtripSeed() {
-        Seed s = new Seed(new V(3094, 1230), 1, 1);
+        Seed s = new Seed(new V(3094, 1230), 293838, 1, 1);
         assertEquals(s, Seed.fromString(s.toString()));
     }
 

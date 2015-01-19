@@ -6,15 +6,18 @@ import java.util.regex.Pattern;
 public class Seed extends GameObject {
     private static final long serialVersionUID = 1L;
 
-    public static int DEFAULT_FUSE = 5;
+    public static int DEFAULT_FUSE = 8;
     public static int DEFAULT_RANGE = 3;
+    public static int DEFAULT_SPAWNED = 1;
     public int fuse;
     public int range;
+    public int spawnedBy;
 
-    public Seed(V pos, int fuse, int range) {
+    public Seed(V pos, int spawnedBy, int fuse, int range) {
         this.pos = pos;
         this.fuse = fuse;
         this.range = range;
+        this.spawnedBy = spawnedBy;
         this.rep = '*';
         this.isPassable = false;
         this.isRemovable = true;
@@ -22,20 +25,20 @@ public class Seed extends GameObject {
     }
 
     public Seed(Seed s) {
-        this(new V(s.pos), s.fuse, s.range);
+        this(new V(s.pos), s.spawnedBy, s.fuse, s.range);
     }
 
     @Override
     public String toString() {
-        return String.format("s(%s, %d, %d)", pos.toString(), fuse, range);
+        return String.format("s(%s, %d, %d, %d)", pos.toString(), spawnedBy, fuse, range);
     }
 
     public static Seed fromString(String s) {
-        Pattern p = Pattern.compile("s\\(v\\((\\d+),\\ (\\d+)\\),\\ (\\d+), (\\d+)\\)");
+        Pattern p = Pattern.compile("s\\(v\\((\\d+),\\ (\\d+)\\),\\ (\\d+),\\ (\\d+), (\\d+)\\)");
         Matcher m = p.matcher(s);
         if (m.matches()) {
             return new Seed(new V(Integer.parseInt(m.group(1)), Integer.parseInt(m.group(2))), Integer.parseInt(m
-                    .group(3)), Integer.parseInt(m.group(4)));
+                    .group(3)), Integer.parseInt(m.group(4)), Integer.parseInt(m.group(5)));
         }
         throw new RuntimeException("invalid seed rep!");
     }
@@ -46,6 +49,7 @@ public class Seed extends GameObject {
         int result = super.hashCode();
         result = prime * result + fuse;
         result = prime * result + range;
+        result = prime * result + spawnedBy;
         return result;
     }
 
@@ -61,6 +65,8 @@ public class Seed extends GameObject {
         if (fuse != other.fuse)
             return false;
         if (range != other.range)
+            return false;
+        if (spawnedBy != other.spawnedBy)
             return false;
         return true;
     }

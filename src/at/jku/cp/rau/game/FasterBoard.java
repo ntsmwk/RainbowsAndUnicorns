@@ -29,7 +29,7 @@ import at.jku.cp.rau.game.objects.V;
 import at.jku.cp.rau.game.objects.Wall;
 import at.jku.cp.rau.utils.RenderUtils;
 
-public class Board implements IBoard, Serializable {
+public class FasterBoard implements IBoard, Serializable {
     private static final long serialVersionUID = 1L;
 
     /**
@@ -119,7 +119,7 @@ public class Board implements IBoard, Serializable {
      * This constructor is used to get a completely empty board. You will most
      * probably never need it.
      */
-    public Board() {
+    public FasterBoard() {
         this.walls = new ArrayList<>();
         this.paths = new ArrayList<>();
         this.markers = new ArrayList<>();
@@ -147,7 +147,7 @@ public class Board implements IBoard, Serializable {
      * @param board
      * @param copyPassive
      */
-    private Board(Board board, boolean copyPassive) {
+    private FasterBoard(FasterBoard board, boolean copyPassive) {
         // copy all the passive elements only once when each player gets a
         // copy of the master-board; for search it's not important that the
         // level is being copied
@@ -160,7 +160,6 @@ public class Board implements IBoard, Serializable {
 
             for (Path p : board.paths)
                 this.paths.add(new Path(p));
-
         } else {
             this.walls = board.walls;
             this.paths = board.paths;
@@ -203,12 +202,12 @@ public class Board implements IBoard, Serializable {
 
     @Override
     public IBoard copy() {
-        return new Board(this, false);
+        return new FasterBoard(this, false);
     }
 
     @Override
     public IBoard deepCopy() {
-        return new Board(this, true);
+        return new FasterBoard(this, true);
     }
 
     /**
@@ -217,7 +216,7 @@ public class Board implements IBoard, Serializable {
      * @param filename
      * @param board
      */
-    public static void toFile(String filename, IBoard board) {
+    public static void toFile(String filename, FasterBoard board) {
         try {
             List<String> lines = toStateRepresentation(board);
             Files.write(Paths.get(filename), lines, StandardCharsets.UTF_8, StandardOpenOption.CREATE_NEW);
@@ -248,15 +247,15 @@ public class Board implements IBoard, Serializable {
      * @param board
      * @return
      */
-    public static List<String> toStateRepresentation(IBoard board) {
+    public static List<String> toStateRepresentation(FasterBoard board) {
         List<String> lines = new ArrayList<>();
-        for (List<? extends GameObject> l : board.getAllObjects()) {
+        for (List<? extends GameObject> l : board.allObjects) {
             for (GameObject g : l) {
                 lines.add(g.toString());
             }
         }
 
-        lines.add(String.format("t(%d)", board.getTick()));
+        lines.add(String.format("t(%d)", board.tick));
         return lines;
     }
 
@@ -267,7 +266,7 @@ public class Board implements IBoard, Serializable {
      * @return
      */
     public static IBoard fromStateRepresentation(List<String> stateRepresentation) {
-        Board board = new Board();
+        FasterBoard board = new FasterBoard();
         for (String line : stateRepresentation) {
             switch (line.charAt(0)) {
             case 'c':
@@ -323,7 +322,7 @@ public class Board implements IBoard, Serializable {
      * @param filename
      * @return
      */
-    public static Board fromLevelFile(String filename) {
+    public static FasterBoard fromLevelFile(String filename) {
         try {
             return fromLevelRepresentation(Files.readAllLines(Paths.get(filename), StandardCharsets.UTF_8));
         } catch (Exception e) {
@@ -337,8 +336,8 @@ public class Board implements IBoard, Serializable {
      * @param levelRepresentation
      * @return
      */
-    public static Board fromLevelRepresentation(List<String> levelRepresentation) {
-        Board board = new Board();
+    public static FasterBoard fromLevelRepresentation(List<String> levelRepresentation) {
+        FasterBoard board = new FasterBoard();
 
         int next_id = 0;
         int y = 0;
@@ -455,10 +454,17 @@ public class Board implements IBoard, Serializable {
      */
     @Override
     public boolean isStoppingRainbow(V pos) {
-        for (GameObject g : at(pos)) {
-            if (g.pos.equals(pos) && g.stopsRainbow)
+        for (Wall w : walls)
+            if (w.pos.equals(pos))
                 return true;
-        }
+
+        for (Cloud c : clouds)
+            if (c.pos.equals(pos))
+                return true;
+
+        for (Seed s : seeds)
+            if (s.pos.equals(pos))
+                return true;
 
         return false;
     }
@@ -472,10 +478,14 @@ public class Board implements IBoard, Serializable {
      */
     @Override
     public boolean isRemovable(V pos) {
-        for (GameObject g : at(pos)) {
-            if (g.pos.equals(pos) && g.isRemovable)
+        for (Cloud c : clouds)
+            if (c.pos.equals(pos))
                 return true;
-        }
+
+        for (Unicorn u : unicorns)
+            if (u.pos.equals(pos))
+                return true;
+
         return false;
     }
 
@@ -488,10 +498,10 @@ public class Board implements IBoard, Serializable {
      */
     @Override
     public boolean isRainbowAt(V pos) {
-        for (GameObject g : at(pos)) {
-            if (g.pos.equals(pos) && g instanceof Rainbow)
+        for (Rainbow r : rainbows)
+            if (r.pos.equals(pos))
                 return true;
-        }
+
         return false;
     }
 
@@ -504,15 +514,29 @@ public class Board implements IBoard, Serializable {
      */
     @Override
     public boolean isPassable(V pos) {
-        List<GameObject> objs = at(pos);
-        if (objs.isEmpty())
-            return false;
-
-        for (GameObject g : objs) {
-            if (g.pos.equals(pos) && !g.isPassable)
-                return false;
+        boolean passable = false;
+        for (Path p : paths) {
+            if (p.pos.equals(pos))
+                passable = true;
         }
-        return true;
+
+        return passable && !isNotPassable(pos);
+    }
+
+    private boolean isNotPassable(V pos) {
+        for (Wall w : walls)
+            if (w.pos.equals(pos))
+                return true;
+
+        for (Cloud c : clouds)
+            if (c.pos.equals(pos))
+                return true;
+
+        for (Seed s : seeds)
+            if (s.pos.equals(pos))
+                return true;
+
+        return false;
     }
 
     /**
@@ -845,7 +869,7 @@ public class Board implements IBoard, Serializable {
             return false;
         if (getClass() != obj.getClass())
             return false;
-        Board other = (Board) obj;
+        FasterBoard other = (FasterBoard) obj;
         if (allObjects == null) {
             if (other.allObjects != null)
                 return false;
