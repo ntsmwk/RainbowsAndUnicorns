@@ -27,6 +27,7 @@ public class QLearner {
 	 */
 	private Random random;
 	private double discountFactor;
+	private int spawn = 0;
 
 	public QLearner() {
 		this(20001, 0.9);
@@ -117,6 +118,14 @@ public class QLearner {
 				if (board.getEndCondition().getWinner() == unicornId) {
 					// Get Spawn Move!
 					qmatrix.put(listToSpawn.get(listToSpawn.size() - 8), 100.0);
+					qmatrix.put(listToSpawn.get(listToSpawn.size() - 7), 101.0);
+					qmatrix.put(listToSpawn.get(listToSpawn.size() - 6), 101.0);
+					qmatrix.put(listToSpawn.get(listToSpawn.size() - 5), 101.0);
+					qmatrix.put(listToSpawn.get(listToSpawn.size() - 4), 101.0);
+					qmatrix.put(listToSpawn.get(listToSpawn.size() - 3), 101.0);
+					qmatrix.put(listToSpawn.get(listToSpawn.size() - 2), 101.0);
+					qmatrix.put(listToSpawn.get(listToSpawn.size() - 1), 101.0);
+					//qmatrix.put(listToSpawn.get(listToSpawn.size() - 0), 101.0);
 				}
 				return i;
 			}
@@ -171,16 +180,6 @@ public class QLearner {
 		return reward;
 	}
 
-	private List<Pair<IBoard, Move>> generatePairList(IBoard board) {
-		ArrayList<Pair<IBoard, Move>> list = new ArrayList<>();
-		list.add(new Pair<IBoard, Move>(board, Move.DOWN));
-		list.add(new Pair<IBoard, Move>(board, Move.LEFT));
-		list.add(new Pair<IBoard, Move>(board, Move.RIGHT));
-		list.add(new Pair<IBoard, Move>(board, Move.SPAWN));
-		list.add(new Pair<IBoard, Move>(board, Move.STAY));
-		list.add(new Pair<IBoard, Move>(board, Move.UP));
-		return list;
-	}
 
 	/**
 	 * Based on the learned model, this function shall return the best move for
@@ -191,13 +190,23 @@ public class QLearner {
 	 * @return a move
 	 */
 	public Move getMove(IBoard board) {
+		//int spawn = 0;
 		Move move = null;
 		double costOfMove = 0.0;
 		for (Pair<IBoard, Move> pair : qmatrix.keySet()) {
 			double cost = qmatrix.get(pair).doubleValue();
-			if (isSameBoard(board, pair) && costOfMove < cost) {
+			if (isSameBoard(board, pair) && costOfMove < cost && cost <= 100.0) {
+				//Enable Back Off Moves
+				if(pair.s == Move.SPAWN){
+					spawn = 7;
+				}
 				costOfMove = cost;
 				move = pair.s;
+			}
+			//Back off Moves....
+			if(isSameBoard(board, pair) && cost > 100.0 && spawn > 0){
+				spawn--;
+				return pair.s;
 			}
 		}
 
