@@ -75,13 +75,14 @@ public class QLearner {
 		// for e in 0 .. number_of_episodes:
 		// do until goal reached:
 		// ...
-		
-		//TODO add runnaway from rainbow..........
+
+		// TODO add runnaway from rainbow..........
 
 		int currEpisodes = startNewGame(board.copy(), qmatrix, 0, numEpisodes);
 		while (currEpisodes < numEpisodes) {
 			// set unicorn to random place etc.
 			currEpisodes = startNewGame(board.copy(), qmatrix, currEpisodes, numEpisodes);
+			System.out.println(currEpisodes);
 		}
 
 		System.out.println("end");
@@ -98,10 +99,10 @@ public class QLearner {
 		// board .. Board of current round (after the Move is executed)
 		// lastBoard .. Board of last round (before the Move is executed)
 		IBoard lastBoard;
-		for (int i = startingPoint; i < numEpisodes; i++) {
+		for (int i = startingPoint+1; i < numEpisodes; i++) {
 			Move move = chooseMove(board);
 			lastBoard = board.copy();
-			System.out.println(move);
+			//System.out.println(move);
 			listToSpawn.add(new Pair<IBoard, Move>(lastBoard.copy(), move));
 
 			board.executeMove(move);
@@ -118,6 +119,7 @@ public class QLearner {
 				if (board.getEndCondition().getWinner() == unicornId) {
 					// Get Spawn Move!
 					qmatrix.put(listToSpawn.get(listToSpawn.size() - 8), 100.0);
+
 					qmatrix.put(listToSpawn.get(listToSpawn.size() - 7), 101.0);
 					qmatrix.put(listToSpawn.get(listToSpawn.size() - 6), 101.0);
 					qmatrix.put(listToSpawn.get(listToSpawn.size() - 5), 101.0);
@@ -125,7 +127,8 @@ public class QLearner {
 					qmatrix.put(listToSpawn.get(listToSpawn.size() - 3), 101.0);
 					qmatrix.put(listToSpawn.get(listToSpawn.size() - 2), 101.0);
 					qmatrix.put(listToSpawn.get(listToSpawn.size() - 1), 101.0);
-					//qmatrix.put(listToSpawn.get(listToSpawn.size() - 0), 101.0);
+					// qmatrix.put(listToSpawn.get(listToSpawn.size() - 0),
+					// 101.0);
 				}
 				return i;
 			}
@@ -160,7 +163,7 @@ public class QLearner {
 	 */
 	private boolean containsBoardState(IBoard board, Map<Pair<IBoard, Move>, Double> qmatrix) {
 		for (Entry<Pair<IBoard, Move>, Double> entry : qmatrix.entrySet()) {
-			if (entry.getKey().f.equals(board)) {
+			if (entry.getKey().f.equals(board) && entry.getValue() <= 100.0) {
 				return true;
 			}
 		}
@@ -180,7 +183,6 @@ public class QLearner {
 		return reward;
 	}
 
-
 	/**
 	 * Based on the learned model, this function shall return the best move for
 	 * a given board.
@@ -190,27 +192,28 @@ public class QLearner {
 	 * @return a move
 	 */
 	public Move getMove(IBoard board) {
-		//int spawn = 0;
-		Move move = null;
+		// int spawn = 0;
+		Pair<IBoard, Move> bestPair = null;
 		double costOfMove = 0.0;
 		for (Pair<IBoard, Move> pair : qmatrix.keySet()) {
 			double cost = qmatrix.get(pair).doubleValue();
 			if (isSameBoard(board, pair) && costOfMove < cost && cost <= 100.0) {
-				//Enable Back Off Moves
-				if(pair.s == Move.SPAWN){
+				// Enable Back Off Moves
+				if (pair.s == Move.SPAWN) {
 					spawn = 7;
 				}
+				// qmatrix.remove(pair);
 				costOfMove = cost;
-				move = pair.s;
+				bestPair = pair;
 			}
-			//Back off Moves....
-			if(isSameBoard(board, pair) && cost > 100.0 && spawn > 0){
+			// Back off Moves....
+			if (isSameBoard(board, pair) && cost > 100.0 && spawn > 0) {
 				spawn--;
 				return pair.s;
 			}
 		}
-
-		return move;
+		qmatrix.remove(bestPair);
+		return bestPair.s;
 	}
 
 	private boolean isSameBoard(IBoard board, Pair<IBoard, Move> pair) {
