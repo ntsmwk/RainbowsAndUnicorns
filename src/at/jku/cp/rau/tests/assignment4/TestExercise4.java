@@ -13,7 +13,7 @@ import at.jku.cp.rau.game.objects.Move;
 import at.jku.cp.rau.learning.QLearner;
 
 public class TestExercise4 {
-    private boolean verbose = false;
+    private boolean verbose = true;
 
     @Test
     public void simplest() {

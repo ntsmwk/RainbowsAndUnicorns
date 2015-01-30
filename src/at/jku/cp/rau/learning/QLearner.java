@@ -2,16 +2,15 @@ package at.jku.cp.rau.learning;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Random;
+import java.util.Set;
 
 import at.jku.cp.rau.game.IBoard;
-import at.jku.cp.rau.game.endconditions.EndCondition;
-import at.jku.cp.rau.game.objects.Cloud;
 import at.jku.cp.rau.game.objects.Move;
-import at.jku.cp.rau.game.objects.Unicorn;
+import at.jku.cp.rau.game.objects.V;
 import at.jku.cp.rau.utils.Pair;
 
 public class QLearner {
@@ -27,7 +26,9 @@ public class QLearner {
 	 */
 	private Random random;
 	private double discountFactor;
-	private int spawn = 0;
+	private boolean spawn = false;
+	private boolean finished = false;
+	private double backUpMoveCost = 101.0;
 
 	public QLearner() {
 		this(20001, 0.9);
@@ -68,79 +69,74 @@ public class QLearner {
 	 *            the board given
 	 */
 	public void learnQFunction(IBoard board) {
-		// TODO: Implement this!
-		// HINT(1): Adapt algorithm for q-learning from the lecture slides
-		// in the following way:
-		//
-		// for e in 0 .. number_of_episodes:
-		// do until goal reached:
-		// ...
-
-		// TODO add runnaway from rainbow..........
-
-		int currEpisodes = startNewGame(board.copy(), qmatrix, 0, numEpisodes);
+		int currEpisodes = 0;
 		while (currEpisodes < numEpisodes) {
-			// set unicorn to random place etc.
-			currEpisodes = startNewGame(board.copy(), qmatrix, currEpisodes, numEpisodes);
-			System.out.println(currEpisodes);
+
+			IBoard newBoard = board.copy();
+			//Use Random Position to also get a solution for bigger boards (bonus)
+			board.getCurrentUnicorn().pos = calculateRandomPosition(newBoard);
+			
+			startNewGame(newBoard);
+			currEpisodes++;
 		}
-
-		System.out.println("end");
-
-		// HINT(2): For storing the q-matrix, please use the provided hashmap.
-		// This is going to save you a lot of trouble!
+	}
+	
+	/**
+	 * Calculates a random starting Position on the board, that is passable 
+	 * @param board
+	 * @return
+	 */
+	public V calculateRandomPosition(IBoard board){
+		V position = new V(random.nextInt(board.getWidth()), random.nextInt(board.getHeight()));
+		while(!board.isPassable(position)){
+			position = new V(random.nextInt(board.getWidth()), random.nextInt(board.getHeight()));
+		}
+		return position;
 	}
 
-	private int startNewGame(IBoard board, Map<Pair<IBoard, Move>, Double> qmatrix, int startingPoint,
-			int numEpisodes) {
+
+	/**
+	 * Starts a new learning episode
+	 * 
+	 * @param board
+	 */
+	private void startNewGame(IBoard board) {
 		ArrayList<Pair<IBoard, Move>> listToSpawn = new ArrayList<>();
 		int unicornId = board.getCurrentUnicorn().id;
-		double reward = 0.0;
-		// board .. Board of current round (after the Move is executed)
-		// lastBoard .. Board of last round (before the Move is executed)
+
 		IBoard lastBoard;
-		for (int i = startingPoint+1; i < numEpisodes; i++) {
+		for (;;) {
 			Move move = chooseMove(board);
 			lastBoard = board.copy();
-			//System.out.println(move);
 			listToSpawn.add(new Pair<IBoard, Move>(lastBoard.copy(), move));
 
 			board.executeMove(move);
-
-			if (containsBoardState(board.copy(), qmatrix)) {
-				reward = getCorrespondingReward(board.copy(), qmatrix);
-				reward = reward * this.discountFactor;
-				qmatrix.put(new Pair<IBoard, Move>(lastBoard.copy(), move), reward);
-				return i;
+			if (containsBoardState(board.copy(), move)) {
+				double reward = getCorrespondingReward(board.copy());
+				if(!(move == Move.SPAWN && reward == 100.0)){
+					qmatrix.put(new Pair<IBoard, Move>(lastBoard.copy(), move), reward * discountFactor);
+				}
+				return;
 			}
 
 			// Only for last move to goal
 			if (!board.isRunning()) {
-				if (board.getEndCondition().getWinner() == unicornId) {
+				if (board.getEndCondition().getWinner() == unicornId && !finished) {
+					finished = true;
 					// Get Spawn Move!
 					qmatrix.put(listToSpawn.get(listToSpawn.size() - 8), 100.0);
-
 					qmatrix.put(listToSpawn.get(listToSpawn.size() - 7), 101.0);
-					qmatrix.put(listToSpawn.get(listToSpawn.size() - 6), 101.0);
-					qmatrix.put(listToSpawn.get(listToSpawn.size() - 5), 101.0);
-					qmatrix.put(listToSpawn.get(listToSpawn.size() - 4), 101.0);
-					qmatrix.put(listToSpawn.get(listToSpawn.size() - 3), 101.0);
-					qmatrix.put(listToSpawn.get(listToSpawn.size() - 2), 101.0);
-					qmatrix.put(listToSpawn.get(listToSpawn.size() - 1), 101.0);
-					// qmatrix.put(listToSpawn.get(listToSpawn.size() - 0),
-					// 101.0);
+					qmatrix.put(listToSpawn.get(listToSpawn.size() - 6), 102.0);
+					qmatrix.put(listToSpawn.get(listToSpawn.size() - 5), 103.0);
+					qmatrix.put(listToSpawn.get(listToSpawn.size() - 4), 104.0);
+					qmatrix.put(listToSpawn.get(listToSpawn.size() - 3), 105.0);
+					qmatrix.put(listToSpawn.get(listToSpawn.size() - 2), 106.0);
+					qmatrix.put(listToSpawn.get(listToSpawn.size() - 1), 107.0);
 				}
-				return i;
+				return;
 			}
 
 		}
-		return numEpisodes;
-	}
-
-	private void setUnicorn(IBoard board, short x, short y) {
-		// TODO set to random place
-		board.getCurrentUnicorn().pos.x = x;
-		board.getCurrentUnicorn().pos.y = y;
 	}
 
 	/**
@@ -150,8 +146,7 @@ public class QLearner {
 	 * @return
 	 */
 	private Move chooseMove(IBoard board) {
-		Move m = board.getPossibleMoves().get(random.nextInt(board.getPossibleMoves().size()));
-		return m;
+		return board.getPossibleMoves().get(random.nextInt(board.getPossibleMoves().size()));
 	}
 
 	/**
@@ -161,9 +156,13 @@ public class QLearner {
 	 * @param qmatrix
 	 * @return true if board is in the HashMap
 	 */
-	private boolean containsBoardState(IBoard board, Map<Pair<IBoard, Move>, Double> qmatrix) {
+	private boolean containsBoardState(IBoard board, Move move) {
 		for (Entry<Pair<IBoard, Move>, Double> entry : qmatrix.entrySet()) {
-			if (entry.getKey().f.equals(board) && entry.getValue() <= 100.0) {
+			if (isSameBoard(board, entry) && entry.getValue() <= 100.0) {
+				double reward = getCorrespondingReward(board.copy());
+				if(qmatrix.containsKey(new Pair<IBoard, Move>(board, move)) && entry.getValue() >= reward*discountFactor){
+					return false;
+				}
 				return true;
 			}
 		}
@@ -171,13 +170,17 @@ public class QLearner {
 
 	}
 
-	private double getCorrespondingReward(IBoard board, Map<Pair<IBoard, Move>, Double> qmatrix) {
+	/**
+	 * get the maximum reward of all actions accessible from the current state
+	 * 
+	 * @param board
+	 * @return
+	 */
+	private double getCorrespondingReward(IBoard board) {
 		double reward = 0.0;
 		for (Entry<Pair<IBoard, Move>, Double> entry : qmatrix.entrySet()) {
-			if (entry.getKey().f.equals(board)) {
-				if (reward < entry.getValue()) {
-					reward = entry.getValue();
-				}
+			if (isSameBoard(board, entry) && reward < entry.getValue() && entry.getValue() <= 100.0) {
+				reward = entry.getValue();
 			}
 		}
 		return reward;
@@ -192,31 +195,40 @@ public class QLearner {
 	 * @return a move
 	 */
 	public Move getMove(IBoard board) {
-		// int spawn = 0;
-		Pair<IBoard, Move> bestPair = null;
+		Entry<Pair<IBoard, Move>, Double> bestEntry = null;
 		double costOfMove = 0.0;
-		for (Pair<IBoard, Move> pair : qmatrix.keySet()) {
-			double cost = qmatrix.get(pair).doubleValue();
-			if (isSameBoard(board, pair) && costOfMove < cost && cost <= 100.0) {
-				// Enable Back Off Moves
-				if (pair.s == Move.SPAWN) {
-					spawn = 7;
-				}
-				// qmatrix.remove(pair);
+		for (Entry<Pair<IBoard, Move>, Double> entry : qmatrix.entrySet()) {
+			double cost = entry.getValue();
+			if (isSameBoard(board, entry) && costOfMove < cost && cost <= 100.0 && !spawn) {
 				costOfMove = cost;
-				bestPair = pair;
+				bestEntry = entry;
 			}
-			// Back off Moves....
-			if (isSameBoard(board, pair) && cost > 100.0 && spawn > 0) {
-				spawn--;
-				return pair.s;
+			// Back off Moves.
+			if (isSameBoard(board, entry) && cost == backUpMoveCost && spawn) {
+				backUpMoveCost++;
+				return entry.getKey().s;
 			}
 		}
-		qmatrix.remove(bestPair);
-		return bestPair.s;
+		// Enable Back Off Moves
+		if (bestEntry.getKey().s == Move.SPAWN) {
+			spawn = true;
+		}
+		qmatrix.remove(bestEntry);
+		return bestEntry.getKey().s;
 	}
 
-	private boolean isSameBoard(IBoard board, Pair<IBoard, Move> pair) {
-		return pair.f.equals(board);
+	/**
+	 * Checks if the unicornPositions of two boards are identical
+	 * @param board
+	 * @param entry
+	 * @return
+	 */
+	private boolean isSameBoard(IBoard board, Entry<Pair<IBoard, Move>, Double> entry) {
+		try {
+			return entry.getKey().f.getCurrentUnicorn().pos.equals(board.getCurrentUnicorn().pos);
+		} catch (ArithmeticException e) {
+			return false;
+		}
+
 	}
 }
