@@ -2,11 +2,9 @@ package at.jku.cp.rau.learning;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Random;
-import java.util.Set;
 
 import at.jku.cp.rau.game.IBoard;
 import at.jku.cp.rau.game.objects.Move;
@@ -28,7 +26,7 @@ public class QLearner {
 	private double discountFactor;
 	private boolean spawn = false;
 	private boolean finished = false;
-	private double backUpMoveCost = 101.0;
+	private double backOffMoveCost = 101.0;
 
 	public QLearner() {
 		this(20001, 0.9);
@@ -73,27 +71,28 @@ public class QLearner {
 		while (currEpisodes < numEpisodes) {
 
 			IBoard newBoard = board.copy();
-			//Use Random Position to also get a solution for bigger boards (bonus)
+			// Use Random Position to also get a solution for bigger boards
+			// Used for bonus-maps
 			board.getCurrentUnicorn().pos = calculateRandomPosition(newBoard);
-			
+
 			startNewGame(newBoard);
 			currEpisodes++;
 		}
 	}
-	
+
 	/**
-	 * Calculates a random starting Position on the board, that is passable 
+	 * Calculates a random starting Position on the board, that is passable
+	 * 
 	 * @param board
 	 * @return
 	 */
-	public V calculateRandomPosition(IBoard board){
+	public V calculateRandomPosition(IBoard board) {
 		V position = new V(random.nextInt(board.getWidth()), random.nextInt(board.getHeight()));
-		while(!board.isPassable(position)){
+		while (!board.isPassable(position)) {
 			position = new V(random.nextInt(board.getWidth()), random.nextInt(board.getHeight()));
 		}
 		return position;
 	}
-
 
 	/**
 	 * Starts a new learning episode
@@ -113,13 +112,14 @@ public class QLearner {
 			board.executeMove(move);
 			if (containsBoardState(board.copy(), move)) {
 				double reward = getCorrespondingReward(board.copy());
-				if(!(move == Move.SPAWN && reward == 100.0)){
+				if (!(move == Move.SPAWN && reward == 100.0)) {
 					qmatrix.put(new Pair<IBoard, Move>(lastBoard.copy(), move), reward * discountFactor);
 				}
 				return;
 			}
 
-			// Only for last move to goal
+			// This case is only accessible when the EndCondition is the first time accomplished
+			// In this case, we want to know all backOff- Moves to survive
 			if (!board.isRunning()) {
 				if (board.getEndCondition().getWinner() == unicornId && !finished) {
 					finished = true;
@@ -160,7 +160,8 @@ public class QLearner {
 		for (Entry<Pair<IBoard, Move>, Double> entry : qmatrix.entrySet()) {
 			if (isSameBoard(board, entry) && entry.getValue() <= 100.0) {
 				double reward = getCorrespondingReward(board.copy());
-				if(qmatrix.containsKey(new Pair<IBoard, Move>(board, move)) && entry.getValue() >= reward*discountFactor){
+				if (qmatrix.containsKey(new Pair<IBoard, Move>(board, move))
+						&& entry.getValue() > reward * discountFactor) {
 					return false;
 				}
 				return true;
@@ -199,17 +200,18 @@ public class QLearner {
 		double costOfMove = 0.0;
 		for (Entry<Pair<IBoard, Move>, Double> entry : qmatrix.entrySet()) {
 			double cost = entry.getValue();
+			//Normal Moves
 			if (isSameBoard(board, entry) && costOfMove < cost && cost <= 100.0 && !spawn) {
 				costOfMove = cost;
 				bestEntry = entry;
 			}
 			// Back off Moves.
-			if (isSameBoard(board, entry) && cost == backUpMoveCost && spawn) {
-				backUpMoveCost++;
+			if (isSameBoard(board, entry) && cost == backOffMoveCost && spawn) {
+				backOffMoveCost++;
 				return entry.getKey().s;
 			}
 		}
-		// Enable Back Off Moves
+		// Enable Back Off Moves after Spawning
 		if (bestEntry.getKey().s == Move.SPAWN) {
 			spawn = true;
 		}
@@ -219,6 +221,7 @@ public class QLearner {
 
 	/**
 	 * Checks if the unicornPositions of two boards are identical
+	 * 
 	 * @param board
 	 * @param entry
 	 * @return
